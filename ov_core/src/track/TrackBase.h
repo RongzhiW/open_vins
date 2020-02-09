@@ -143,6 +143,7 @@ namespace ov_core {
 
             // Convert values to the OpenCV format
             for (auto const &cam : camera_calib) {
+                // 为什么加锁? 后端和前端非同一线程,后端会更新k,d(待确定)
                 // Lock this image feed
                 std::unique_lock<std::mutex> lck(mtx_feeds.at(cam.first));
                 // Fisheye value
@@ -185,6 +186,7 @@ namespace ov_core {
                     // Loop through each camera for this feature
                     for (auto const& meas_pair : feat->timestamps) {
                         size_t camid = meas_pair.first;
+                        // 为什么加锁? 后端和前端非同一线程, 后端会使用feat(待确定)
                         std::unique_lock<std::mutex> lck(mtx_feeds.at(camid));
                         for(size_t m=0; m<feat->uvs.at(camid).size(); m++) {
                             cv::Point2f pt(feat->uvs.at(camid).at(m)(0), feat->uvs.at(camid).at(m)(1));

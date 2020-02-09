@@ -60,6 +60,7 @@ void Propagator::propagate_and_clone(State* state, double timestamp) {
     double t_off_new = state->calib_dt_CAMtoIMU()->value()(0);
 
     // First lets construct an IMU vector of measurements we need
+    // 第一帧时state->timestamp()是imu的时间戳, 不应该加offset?
     double time0 = state->timestamp()+last_prop_time_offset;
     double time1 = timestamp+t_off_new;
     vector<IMUDATA> prop_data = Propagator::select_imu_readings(imu_data,time0,time1);

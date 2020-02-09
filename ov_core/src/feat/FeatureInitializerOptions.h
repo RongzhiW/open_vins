@@ -51,7 +51,7 @@ namespace ov_core {
         /// Minimum distance to accept triangulated features
         double min_dist = 0.25;
 
-        /// Minimum distance to accept triangulated features
+        /// Maximum distance to accept triangulated features
         double max_dist = 40;
 
         /// Max baseline ratio to accept triangulated features

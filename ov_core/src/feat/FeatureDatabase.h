@@ -222,6 +222,7 @@ namespace ov_core {
             for (auto it = features_idlookup.begin(); it != features_idlookup.end();) {
                 // Boolean if it has the timestamp
                 bool has_timestamp = false;
+                // 并不需要对左右目均进行遍历
                 for (auto const &pair : (*it).second->timestamps) {
                     // Loop through all timestamps, and see if it has it
                     for (auto &timefeat : pair.second) {

@@ -146,6 +146,7 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
     t_lhe.join();
     t_rhe.join();
 
+    // 提取pyramid的border和计算gradient的border类型不一样?
     // Extract image pyramids (boost seems to require us to put all the arguments even if there are defaults....)
     std::vector<cv::Mat> imgpyr_left, imgpyr_right;
     boost::thread t_lp = boost::thread(cv::buildOpticalFlowPyramid, boost::cref(img_left),
@@ -166,11 +167,13 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
         // Save the current image and pyramid
         img_last[cam_id_left] = img_left.clone();
         img_last[cam_id_right] = img_right.clone();
+        // 避免重复计算金字塔
         img_pyramid_last[cam_id_left] = imgpyr_left;
         img_pyramid_last[cam_id_right] = imgpyr_right;
         return;
     }
 
+    // 由于提点是在上一帧做的，对于第一帧会进入perform_detection_stereo两次
     // First we should make that the last images have enough features so we can do KLT
     // This will "top-off" our number of tracks so always have a constant number
     perform_detection_stereo(img_pyramid_last[cam_id_left], img_pyramid_last[cam_id_right],
@@ -505,6 +508,7 @@ void TrackKLT::perform_matching(const std::vector<cv::Mat>& img0pyr, const std::
         pts1_n.push_back(undistort_point(pts1.at(i),id1));
     }
 
+    // 哪里normalize的?
     // Do RANSAC outlier rejection (note since we normalized the max pixel error is now in the normalized cords)
     std::vector<uchar> mask_rsc;
     double max_focallength_img0 = std::max(camera_k_OPENCV.at(id0)(0,0),camera_k_OPENCV.at(id0)(1,1));

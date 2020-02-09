@@ -482,6 +482,7 @@ bool VioManager::try_to_initialize() {
         //imu_val.block(10,0,3,1) << 0,0,0;
         //imu_val.block(13,0,3,1) << 0,0,0;
         state->imu()->set_value(imu_val);
+        // 这里的time0是newest_time - 0.5
         state->set_timestamp(time0);
 
         // Else we are good to go, print out our stats
@@ -503,6 +504,7 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     // State propagation, and clone augmentation
     //===================================================================================
 
+    // 如果图像延迟较大，在初始化时是有可能的
     // Return if the camera measurement is out of order
     if(state->timestamp() >= timestamp) {
         ROS_WARN("image received out of order (prop dt = %3f)",(timestamp-state->timestamp()));

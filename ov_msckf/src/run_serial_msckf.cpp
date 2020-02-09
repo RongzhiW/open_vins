@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     // Location of the ROS bag we want to read in
     std::string path_to_bag;
     //nhPrivate.param<std::string>("path_bag", path_to_bag, "/home/keck/catkin_ws/V1_01_easy.bag");
-    nh.param<std::string>("path_bag", path_to_bag, "/home/patrick/datasets/eth/V1_01_easy.bag");
+    nh.param<std::string>("path_bag", path_to_bag, "/home/tianu/Documents/DJI/datasets/EucRoc/V2_01_easy.bag");
     ROS_INFO("ros bag path is: %s", path_to_bag.c_str());
 
     // Load groundtruth if we have it
@@ -152,6 +152,8 @@ int main(int argc, char** argv)
         if (s2 != NULL && m.getTopic() == topic_imu) {
             // convert into correct format
             double timem = (*s2).header.stamp.toSec();
+//            std::cout << std::setprecision(16);
+//            std::cout << "imu stamp: " << (*s2).header.stamp.toSec() << std::endl;
             Eigen::Matrix<double, 3, 1> wm, am;
             wm << (*s2).angular_velocity.x, (*s2).angular_velocity.y, (*s2).angular_velocity.z;
             am << (*s2).linear_acceleration.x, (*s2).linear_acceleration.y, (*s2).linear_acceleration.z;
@@ -174,6 +176,8 @@ int main(int argc, char** argv)
             has_left = true;
             img0 = cv_ptr->image.clone();
             time = cv_ptr->header.stamp.toSec();
+//            std::cout << std::setprecision(16);
+//            std::cout << "left camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
         }
 
         // Handle RIGHT camera
@@ -200,6 +204,7 @@ int main(int argc, char** argv)
 
         // Fill our buffer if we have not
         if(has_left && img0_buffer.rows == 0) {
+            // 第一帧图像不做处理
             has_left = false;
             time_buffer = time;
             img0_buffer = img0.clone();
@@ -242,6 +247,7 @@ int main(int argc, char** argv)
                 //imustate.block(11,0,6,1).setZero();
                 sys->initialize_with_gt(imustate);
             } else if(gt_states.empty() || sys->intialized()) {
+                // 每次都是处理上一帧
                 sys->feed_measurement_stereo(time_buffer, img0_buffer, img1_buffer, 0, 1);
             }
             // visualize

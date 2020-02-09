@@ -72,6 +72,7 @@ namespace ov_core {
             dq = quatnorm(dq);
 
             //Update estimate and recompute R
+            // dq是左乘，value表示的姿态是world->local?
             set_value(quat_multiply(dq, _value));
 
         }

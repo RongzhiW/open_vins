@@ -98,6 +98,7 @@ bool InertialInitializer::initialize_with_imu(double &time0, Eigen::Matrix<doubl
     //    return false;
     //}
 
+    // 为什么用secondnew? (newest表示刚有激励，在这之前可以假定飞机处于静止?)
     // Sum up our current accelerations and velocities
     Eigen::Vector3d linsum = Eigen::Vector3d::Zero();
     Eigen::Vector3d angsum = Eigen::Vector3d::Zero();
@@ -136,7 +137,9 @@ bool InertialInitializer::initialize_with_imu(double &time0, Eigen::Matrix<doubl
 
     // Set our biases equal to our noise (subtract our gravity from accelerometer bias)
     Eigen::Matrix<double,3,1> bg = angavg;
-    Eigen::Matrix<double,3,1> ba = linavg - quat_2_Rot(q_GtoI)*_gravity;
+    // 如果是完全静止, 且9.81无误差的话, 这肯定是0啊...
+    // ba初始化有问题
+    Eigen::Matrix<double,3,1> ba = linavg- quat_2_Rot(q_GtoI)*_gravity;
 
 
     // Set our state variables

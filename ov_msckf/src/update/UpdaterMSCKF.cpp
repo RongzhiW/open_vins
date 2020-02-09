@@ -105,7 +105,9 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
         }
 
         // Gauss-newton refine the feature
+//        std::cout << "triangulate p_FinA: " << (*it1)->p_FinA.transpose() << std::endl;
         success = initializer_feat->single_gaussnewton(*it1, clones_cam);
+//        std::cout << "gaussnewton: " << (*it1)->p_FinA.transpose() << std::endl;
         if(!success) {
             (*it1)->to_delete = true;
             it1 = feature_vec.erase(it1);
@@ -177,6 +179,7 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
         Eigen::MatrixXd P_marg = StateHelper::get_marginal_covariance(state, Hx_order);
         Eigen::MatrixXd S = H_x*P_marg*H_x.transpose();
         S.diagonal() += _options.sigma_pix_sq*Eigen::VectorXd::Ones(S.rows());
+        // 当前状态下观测的cost: (z - h(x_hat))^T * Cov_z^(-1) * (z - h(x_hat))
         double chi2 = res.dot(S.llt().solve(res));
 
         // Get our threshold (we precompute up to 500 but handle the case that it is more)

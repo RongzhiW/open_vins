@@ -339,6 +339,7 @@ void UpdaterHelper::get_feature_jacobian_full(State* state, UpdaterHelperFeature
         // Assert we have a clone
         assert(feature.anchor_cam_id != -1);
 
+        // anchor_cam_id有可能不对应着clone time?
         // Add this anchor if it is not added already
         PoseJPL *clone_Ai = state->get_clone(feature.anchor_clone_timestamp);
         if(map_hx.find(clone_Ai) == map_hx.end()) {
@@ -357,6 +358,7 @@ void UpdaterHelper::get_feature_jacobian_full(State* state, UpdaterHelperFeature
                 total_hx += clone_calib->size();
             }
         }
+        // intrinsic呢?
 
     }
 
@@ -383,6 +385,7 @@ void UpdaterHelper::get_feature_jacobian_full(State* state, UpdaterHelperFeature
     // If anchored, then we can use the "best" p_FinG since the value of p_FinA does not matter
     Eigen::Vector3d p_FinG_fej = feature.p_FinG_fej;
     if(FeatureRepresentation::is_relative_representation(feature.feat_representation)) {
+        // anchor的话, FinG_fej没用?
         p_FinG_fej = p_FinG;
     }
 
@@ -570,6 +573,7 @@ void UpdaterHelper::nullspace_project_inplace(Eigen::MatrixXd &H_f, Eigen::Matri
             // Multiply G to the corresponding lines (m-1,m) in each matrix
             // Note: we only apply G to the nonzero cols [n:Ho.cols()-n-1], while
             //       it is equivalent to applying G to the entire cols [0:Ho.cols()-1].
+            // applyOnTheLeft左乘数为: [cos sin; -sin cos], 而非[cos -sin; sin cos]
             (H_f.block(m - 1, n, 2, H_f.cols() - n)).applyOnTheLeft(0, 1, tempHo_GR.adjoint());
             (H_x.block(m - 1, 0, 2, H_x.cols())).applyOnTheLeft(0, 1, tempHo_GR.adjoint());
             (res.block(m - 1, 0, 2, 1)).applyOnTheLeft(0, 1, tempHo_GR.adjoint());

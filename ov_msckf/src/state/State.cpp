@@ -51,6 +51,7 @@ void State::initialize_variables() {
         PoseJPL *pose = new PoseJPL();
 
         // Allocate intrinsics for this camera
+        //  包括fx,fy,cx,cy,k1,k2,p1,p2
         Vec *intrin = new Vec(8);
 
         // Add these to the corresponding maps
@@ -82,6 +83,7 @@ void State::initialize_variables() {
     }
     if (_options.do_calib_camera_pose){
         for(int i=0; i<_options.num_cameras; i++) {
+            // quat: 0.001^2; t:0.01^2
             _Cov.block(_calib_IMUtoCAM.at(i)->id(),_calib_IMUtoCAM.at(i)->id(),3,3) = std::pow(0.001,2)*Eigen::MatrixXd::Identity(3,3);
             _Cov.block(_calib_IMUtoCAM.at(i)->id()+3,_calib_IMUtoCAM.at(i)->id()+3,3,3) = std::pow(0.01,2)*Eigen::MatrixXd::Identity(3,3);
         }
