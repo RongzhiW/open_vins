@@ -308,6 +308,7 @@ bool StateHelper::initialize(State *state, Type *new_variable, const std::vector
     Eigen::MatrixXd Hxinit = H_R.block(0, 0, new_var_size, H_R.cols());
     Eigen::MatrixXd H_finit = H_L.block(0, 0, new_var_size, new_var_size);
     Eigen::VectorXd resinit = res.block(0, 0, new_var_size, 1);
+    // 噪声项不受givens影响
     Eigen::MatrixXd Rinit = R.block(0, 0, new_var_size, new_var_size);
 
     // 2. Nullspace projected updating system

@@ -558,7 +558,7 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     auto it1 = feats_lost.begin();
     while(it1 != feats_lost.end()) {
         if(std::find(feats_marg.begin(),feats_marg.end(),(*it1)) != feats_marg.end()) {
-            //ROS_WARN("FOUND FEATURE THAT WAS IN BOTH feats_lost and feats_marg!!!!!!");
+//            ROS_WARN("FOUND FEATURE THAT WAS IN BOTH feats_lost and feats_marg!!!!!!");
             it1 = feats_lost.erase(it1);
         } else {
             it1++;
@@ -594,6 +594,14 @@ void VioManager::do_feature_propagate_update(double timestamp) {
         it0++;
     }
 
+//    printf("feats_max ids:\n");
+//    for (auto &feat : feats_maxtracks) {
+//        printf("feats_max tm:%f id:%d last_tm:%f\n", timestamp, feat->featid, feat->timestamps[0].at(feat->timestamps[0].size() - 1));
+//    }
+//    printf("state->features_SLAM ids:\n");
+//    for (auto &feat : state->features_SLAM()) {
+//        printf("feats_SLAM tm:%f id:%d \n", timestamp, feat.second->_featid);
+//    }
     // Append a new SLAM feature if we have the room to do so
     // Also check that we have waited our delay amount (normally prevents bad first set of slam points)
     if(state->options().max_slam_features > 0 && timestamp-startup_time >= dt_statupdelay && (int)state->features_SLAM().size() < state->options().max_slam_features+curr_aruco_tags) {
@@ -607,20 +615,30 @@ void VioManager::do_feature_propagate_update(double timestamp) {
             feats_maxtracks.erase(feats_maxtracks.end()-valid_amount, feats_maxtracks.end());
         }
     }
+//    printf("feats_slam ids:\n");
+//    for (auto &feat : feats_slam) {
+//        printf("feats_slam tm:%f id:%d last_tm:%f\n", timestamp, feat->featid, feat->timestamps[0].at(feat->timestamps[0].size() - 1));
+//    }
 
     // Loop through current SLAM features, we have tracks of them, grab them for this update!
     // Note: if we have a slam feature that has lost tracking, then we should marginalize it out
     // Note: if you do not use FEJ, these types of slam features *degrade* the estimator performance....
+
+//    printf("feats_slam size:%d states's feature_SLAMS:%d\n", feats_slam.size(), state->features_SLAM().size());
     for (std::pair<const size_t, Landmark*> &landmark : state->features_SLAM()) {
         if(trackARUCO != nullptr) {
             Feature* feat1 = trackARUCO->get_feature_database()->get_feature(landmark.second->_featid);
             if(feat1 != nullptr) feats_slam.push_back(feat1);
         }
         Feature* feat2 = trackFEATS->get_feature_database()->get_feature(landmark.second->_featid);
+        // Ques: feats_slam内会不会已经含有feat2了?
+        // 经测试，不会
         if(feat2 != nullptr) feats_slam.push_back(feat2);
+        // 不再继续被看到的old slam feature需要被边缘化掉
         if(feat2 == nullptr) landmark.second->should_marg = true;
     }
 
+//    printf("feats_lost:%d feats_mag:%d feats_max:%d feats_slam:%d\n", feats_lost.size(), feats_marg.size(), feats_maxtracks.size(), feats_slam.size());
     // Lets marginalize out all old SLAM features here
     // These are ones that where not successfully tracked into the current frame
     // We do *NOT* marginalize out our aruco tags

@@ -168,6 +168,7 @@ void UpdaterSLAM::delayed_init(State *state, std::vector<Feature*>& feature_vec)
         double chi2_multipler = ((int)feat.featid < state->options().max_aruco_features)? _options_aruco.chi2_multipler : _options_slam.chi2_multipler;
         if (StateHelper::initialize(state, landmark, Hx_order, H_x, H_f, R, res, chi2_multipler)){
             state->insert_SLAM_feature((*it2)->featid, landmark);
+            // new slam feature会从feature base里删掉?
             (*it2)->to_delete = true;
             it2++;
         } else {

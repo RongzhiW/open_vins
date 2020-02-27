@@ -141,6 +141,7 @@ int main(int argc, char** argv)
 
 
     // Step through the rosbag
+    int msg_cnt = 0;
     for (const rosbag::MessageInstance& m : view) {
 
         // If ros is wants us to stop, break out
@@ -153,11 +154,12 @@ int main(int argc, char** argv)
             // convert into correct format
             double timem = (*s2).header.stamp.toSec();
 //            std::cout << std::setprecision(16);
-//            std::cout << "imu stamp: " << (*s2).header.stamp.toSec() << std::endl;
+//            std::cout << "msg_cnt: " << msg_cnt << " imu stamp: " << (*s2).header.stamp.toSec() << std::endl;
             Eigen::Matrix<double, 3, 1> wm, am;
             wm << (*s2).angular_velocity.x, (*s2).angular_velocity.y, (*s2).angular_velocity.z;
             am << (*s2).linear_acceleration.x, (*s2).linear_acceleration.y, (*s2).linear_acceleration.z;
             // send it to our VIO system
+            // imu 数据塞到buffer里
             sys->feed_measurement_imu(timem, wm, am);
         }
 
@@ -176,8 +178,8 @@ int main(int argc, char** argv)
             has_left = true;
             img0 = cv_ptr->image.clone();
             time = cv_ptr->header.stamp.toSec();
-//            std::cout << std::setprecision(16);
-//            std::cout << "left camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
+            std::cout << std::setprecision(16);
+            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
         }
 
         // Handle RIGHT camera
@@ -198,8 +200,11 @@ int main(int argc, char** argv)
             //if(std::abs(cv_ptr->header.stamp.toSec()-time) < 0.02) {
             has_right = true;
             img1 = cv_ptr->image.clone();
+//            std::cout << std::setprecision(16);
+//            std::cout << "msg_cnt: " << msg_cnt << " right camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
             //}
         }
+        msg_cnt++;
 
 
         // Fill our buffer if we have not

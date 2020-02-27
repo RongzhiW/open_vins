@@ -170,6 +170,9 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
         // 避免重复计算金字塔
         img_pyramid_last[cam_id_left] = imgpyr_left;
         img_pyramid_last[cam_id_right] = imgpyr_right;
+        last_timestamp = timestamp;
+//        std::cout << std::setprecision(17);
+//        std::cout << "detection_stereo timestamp: " << last_timestamp << std::endl;
         return;
     }
 
@@ -179,6 +182,8 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
     perform_detection_stereo(img_pyramid_last[cam_id_left], img_pyramid_last[cam_id_right],
                              pts_last[cam_id_left], pts_last[cam_id_right],
                              ids_last[cam_id_left], ids_last[cam_id_right]);
+//    std::cout << std::setprecision(17);
+//    std::cout << "detection_stereo timestamp: " << last_timestamp << std::endl;
     rT3 =  boost::posix_time::microsec_clock::local_time();
 
 
@@ -257,6 +262,7 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
     //===================================================================================
 
     // Update our feature database, with theses new observations
+    printf("add features to database at %f\n", timestamp);
     for(size_t i=0; i<good_left.size(); i++) {
         // Assert that our IDs are the same (i.e., stereo )
         assert(good_ids_left.at(i)==good_ids_right.at(i));
@@ -270,6 +276,7 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
         database->update_feature(good_ids_left.at(i), timestamp, cam_id_right,
                                  good_right.at(i).pt.x, good_right.at(i).pt.y,
                                  npt_r.x, npt_r.y);
+//        printf("uv tm:%f id %d\n", timestamp, good_ids_left.at(i));
     }
 
     // Move forward in time
@@ -281,6 +288,7 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
     pts_last[cam_id_right] = good_right;
     ids_last[cam_id_left] = good_ids_left;
     ids_last[cam_id_right] = good_ids_right;
+    last_timestamp = timestamp;
     rT6 =  boost::posix_time::microsec_clock::local_time();
 
 

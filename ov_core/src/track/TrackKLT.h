@@ -143,6 +143,7 @@ namespace ov_core {
 
         // Last set of image pyramids
         std::map<size_t, std::vector<cv::Mat>> img_pyramid_last;
+        double last_timestamp;
 
     };
 
