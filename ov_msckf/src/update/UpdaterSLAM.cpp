@@ -415,6 +415,7 @@ void UpdaterSLAM::change_anchors(State* state){
         // Else lets see if it is anchored in the clone that will be marginalized
         assert(marg_timestep <= f.second->_anchor_clone_timestamp);
         if (f.second->_anchor_clone_timestamp == marg_timestep) {
+//            printf("change anchor of slam_feat %d at %f\n", f.second->_featid, state->timestamp());
             perform_anchor_change(state, f.second, state->timestamp(), f.second->_anchor_cam_id);
         }
     }

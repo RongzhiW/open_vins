@@ -262,7 +262,7 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
     //===================================================================================
 
     // Update our feature database, with theses new observations
-    printf("add features to database at %f\n", timestamp);
+//    printf("add features to %d's feats database at %f\n", database->get_internal_data().size(), timestamp);
     for(size_t i=0; i<good_left.size(); i++) {
         // Assert that our IDs are the same (i.e., stereo )
         assert(good_ids_left.at(i)==good_ids_right.at(i));
@@ -278,6 +278,7 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
                                  npt_r.x, npt_r.y);
 //        printf("uv tm:%f id %d\n", timestamp, good_ids_left.at(i));
     }
+//    printf("after add features database size:%d\n", database->get_internal_data().size());
 
     // Move forward in time
     img_last[cam_id_left] = img_left.clone();

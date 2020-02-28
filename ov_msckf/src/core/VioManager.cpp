@@ -594,9 +594,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
         it0++;
     }
 
-//    printf("feats_max ids:\n");
+//    printf("feats_max count:%d\n", feats_maxtracks.size());
 //    for (auto &feat : feats_maxtracks) {
-//        printf("feats_max tm:%f id:%d last_tm:%f\n", timestamp, feat->featid, feat->timestamps[0].at(feat->timestamps[0].size() - 1));
+//        printf("feats_max tm:%f size:%d id:%d last_tm:%f\n", timestamp, feat->timestamps[0].size(), feat->featid, feat->timestamps[0].at(feat->timestamps[0].size() - 1));
 //    }
 //    printf("state->features_SLAM ids:\n");
 //    for (auto &feat : state->features_SLAM()) {
@@ -624,18 +624,19 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     // Note: if we have a slam feature that has lost tracking, then we should marginalize it out
     // Note: if you do not use FEJ, these types of slam features *degrade* the estimator performance....
 
-//    printf("feats_slam size:%d states's feature_SLAMS:%d\n", feats_slam.size(), state->features_SLAM().size());
+//    printf("tm:%f states's feature_SLAMS:%d\n", timestamp, state->features_SLAM().size());
     for (std::pair<const size_t, Landmark*> &landmark : state->features_SLAM()) {
         if(trackARUCO != nullptr) {
             Feature* feat1 = trackARUCO->get_feature_database()->get_feature(landmark.second->_featid);
             if(feat1 != nullptr) feats_slam.push_back(feat1);
         }
         Feature* feat2 = trackFEATS->get_feature_database()->get_feature(landmark.second->_featid);
-        // Ques: feats_slam内会不会已经含有feat2了?
-        // 经测试，不会
+        // slam feature还有观测
         if(feat2 != nullptr) feats_slam.push_back(feat2);
+//        if(feat2 != nullptr) printf("slam feature %d add feat size:%d\n", landmark.first, feat2->timestamps[0].size());
         // 不再继续被看到的old slam feature需要被边缘化掉
         if(feat2 == nullptr) landmark.second->should_marg = true;
+//        if (feat2 == nullptr) printf("slam feature %d should_marg:%d\n", landmark.first);
     }
 
 //    printf("feats_lost:%d feats_mag:%d feats_max:%d feats_slam:%d\n", feats_lost.size(), feats_marg.size(), feats_maxtracks.size(), feats_slam.size());
@@ -657,6 +658,7 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     }
 
     // Concatenate our MSCKF feature arrays (i.e., ones not being used for slam updates)
+//    printf("tm:%f feats_lost/marg/remained_maxtrack size:%d/%d/%d\n", timestamp, feats_lost.size(), feats_marg.size(), feats_maxtracks.size());
     std::vector<Feature*> featsup_MSCKF = feats_lost;
     featsup_MSCKF.insert(featsup_MSCKF.end(), feats_marg.begin(), feats_marg.end());
     featsup_MSCKF.insert(featsup_MSCKF.end(), feats_maxtracks.begin(), feats_maxtracks.end());
@@ -668,10 +670,13 @@ void VioManager::do_feature_propagate_update(double timestamp) {
 
     // Pass them to our MSCKF updater
     // We update first so that our SLAM initialization will be more accurate??
+//    printf("featsup_MSCK size:%d\n", featsup_MSCKF.size());
     updaterMSCKF->update(state, featsup_MSCKF);
     rT4 =  boost::posix_time::microsec_clock::local_time();
 
     // Perform SLAM delay init and update
+//    printf("feats_slam_UPDATE size:%d\n", feats_slam_UPDATE.size());
+//    printf("feats_slam_DELAYED size:%d\n", feats_slam_DELAYED.size());
     updaterSLAM->update(state, feats_slam_UPDATE);
     updaterSLAM->delayed_init(state, feats_slam_DELAYED);
     rT5 =  boost::posix_time::microsec_clock::local_time();
