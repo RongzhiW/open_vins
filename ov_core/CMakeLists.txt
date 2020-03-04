@@ -69,8 +69,8 @@ add_library(ov_core_lib
         src/sim/BsplineSE3.cpp
         src/sim/Simulator.cpp
         src/track/TrackBase.cpp
-        src/track/TrackAruco.cpp
-        src/track/TrackDescriptor.cpp
+#        src/track/TrackAruco.cpp
+#        src/track/TrackDescriptor.cpp
         src/track/TrackKLT.cpp
         src/track/TrackSIM.cpp
         src/types/Landmark.cpp

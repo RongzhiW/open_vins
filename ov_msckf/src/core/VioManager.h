@@ -26,8 +26,8 @@
 #include <algorithm>
 #include <Eigen/StdVector>
 
-#include "track/TrackAruco.h"
-#include "track/TrackDescriptor.h"
+//#include "track/TrackAruco.h"
+//#include "track/TrackDescriptor.h"
 #include "track/TrackKLT.h"
 #include "track/TrackSIM.h"
 #include "init/InertialInitializer.h"

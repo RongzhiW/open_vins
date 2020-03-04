@@ -288,15 +288,15 @@ void RosVisualizer::publish_images() {
 
     // Get our trackers
     TrackBase *trackFEATS = _app->get_track_feat();
-    TrackBase *trackARUCO = _app->get_track_aruco();
+//    TrackBase *trackARUCO = _app->get_track_aruco();
 
     // Get our image of history tracks
     cv::Mat img_history;
     trackFEATS->display_history(img_history,255,255,0,255,255,255);
-    if(trackARUCO != nullptr) {
-        trackARUCO->display_history(img_history, 0, 255, 255, 255, 255, 255);
-        trackARUCO->display_active(img_history, 0, 255, 255, 255, 255, 255);
-    }
+//    if(trackARUCO != nullptr) {
+//        trackARUCO->display_history(img_history, 0, 255, 255, 255, 255, 255);
+//        trackARUCO->display_active(img_history, 0, 255, 255, 255, 255, 255);
+//    }
 
     // Create our message
     std_msgs::Header header;

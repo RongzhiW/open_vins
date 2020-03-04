@@ -310,14 +310,14 @@ VioManager::VioManager(ros::NodeHandle &nh) {
         trackFEATS = new TrackKLT(num_pts,state->options().max_aruco_features,fast_threshold,grid_x,grid_y,min_px_dist);
         trackFEATS->set_calibration(camera_calib, camera_fisheye);
     } else {
-        trackFEATS = new TrackDescriptor(num_pts,state->options().max_aruco_features,fast_threshold,grid_x,grid_y,knn_ratio);
-        trackFEATS->set_calibration(camera_calib, camera_fisheye);
+//        trackFEATS = new TrackDescriptor(num_pts,state->options().max_aruco_features,fast_threshold,grid_x,grid_y,knn_ratio);
+//        trackFEATS->set_calibration(camera_calib, camera_fisheye);
     }
 
     // Initialize our aruco tag extractor
     if(use_aruco) {
-        trackARUCO = new TrackAruco(state->options().max_aruco_features,do_downsizing);
-        trackARUCO->set_calibration(camera_calib, camera_fisheye);
+//        trackARUCO = new TrackAruco(state->options().max_aruco_features,do_downsizing);
+//        trackARUCO->set_calibration(camera_calib, camera_fisheye);
     }
 
     // Initialize our state propagator
@@ -361,9 +361,9 @@ void VioManager::feed_measurement_monocular(double timestamp, cv::Mat& img0, siz
     trackFEATS->feed_monocular(timestamp, img0, cam_id);
 
     // If aruoc is avalible, the also pass to it
-    if(trackARUCO != nullptr) {
-        trackARUCO->feed_monocular(timestamp, img0, cam_id);
-    }
+//    if(trackARUCO != nullptr) {
+//        trackARUCO->feed_monocular(timestamp, img0, cam_id);
+//    }
     rT2 =  boost::posix_time::microsec_clock::local_time();
 
     // If we do not have VIO initialization, then try to initialize
@@ -401,9 +401,9 @@ void VioManager::feed_measurement_stereo(double timestamp, cv::Mat& img0, cv::Ma
     // If aruoc is avalible, the also pass to it
     // NOTE: binocular tracking for aruco doesn't make sense as we by default have the ids
     // NOTE: thus we just call the stereo tracking if we are doing binocular!
-    if(trackARUCO != nullptr) {
-        trackARUCO->feed_stereo(timestamp, img0, img1, cam_id0, cam_id1);
-    }
+//    if(trackARUCO != nullptr) {
+//        trackARUCO->feed_stereo(timestamp, img0, img1, cam_id0, cam_id1);
+//    }
     rT2 =  boost::posix_time::microsec_clock::local_time();
 
     // If we do not have VIO initialization, then try to initialize
@@ -548,9 +548,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     // Don't need to get the oldest features untill we reach our max number of clones
     if((int)state->n_clones() > state->options().max_clone_size) {
         feats_marg = trackFEATS->get_feature_database()->features_containing(state->margtimestep());
-        if(trackARUCO != nullptr && timestamp-startup_time >= dt_statupdelay) {
-            feats_slam = trackARUCO->get_feature_database()->features_containing(state->margtimestep());
-        }
+//        if(trackARUCO != nullptr && timestamp-startup_time >= dt_statupdelay) {
+//            feats_slam = trackARUCO->get_feature_database()->features_containing(state->margtimestep());
+//        }
     }
 
     // We also need to make sure that the max tracks does not contain any lost features
@@ -626,10 +626,10 @@ void VioManager::do_feature_propagate_update(double timestamp) {
 
 //    printf("tm:%f states's feature_SLAMS:%d\n", timestamp, state->features_SLAM().size());
     for (std::pair<const size_t, Landmark*> &landmark : state->features_SLAM()) {
-        if(trackARUCO != nullptr) {
-            Feature* feat1 = trackARUCO->get_feature_database()->get_feature(landmark.second->_featid);
-            if(feat1 != nullptr) feats_slam.push_back(feat1);
-        }
+//        if(trackARUCO != nullptr) {
+//            Feature* feat1 = trackARUCO->get_feature_database()->get_feature(landmark.second->_featid);
+//            if(feat1 != nullptr) feats_slam.push_back(feat1);
+//        }
         Feature* feat2 = trackFEATS->get_feature_database()->get_feature(landmark.second->_featid);
         // slam feature还有观测
         if(feat2 != nullptr) feats_slam.push_back(feat2);
@@ -698,9 +698,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     // This allows for measurements to be used in the future if they failed to be used this time
     // Note we need to do this before we feed a new image, as we want all new measurements to NOT be deleted
     trackFEATS->get_feature_database()->cleanup();
-    if(trackARUCO != nullptr) {
-        trackARUCO->get_feature_database()->cleanup();
-    }
+//    if(trackARUCO != nullptr) {
+//        trackARUCO->get_feature_database()->cleanup();
+//    }
 
     //===================================================================================
     // Cleanup, marginalize out what we don't need any more...
@@ -727,9 +727,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
         }
         // Update the trackers and their databases
         trackFEATS->set_calibration(cameranew_calib, cameranew_fisheye, true);
-        if(trackARUCO != nullptr) {
-            trackARUCO->set_calibration(cameranew_calib, cameranew_fisheye, true);
-        }
+//        if(trackARUCO != nullptr) {
+//            trackARUCO->set_calibration(cameranew_calib, cameranew_fisheye, true);
+//        }
     }
     rT6 =  boost::posix_time::microsec_clock::local_time();
 
