@@ -301,10 +301,10 @@ void RosVisualizer::publish_images() {
     // Create our message
     std_msgs::Header header;
     header.stamp = ros::Time::now();
-    sensor_msgs::ImagePtr exl_msg = cv_bridge::CvImage(header, "bgr8", img_history).toImageMsg();
+//    sensor_msgs::ImagePtr exl_msg = cv_bridge::CvImage(header, "bgr8", img_history).toImageMsg();
 
     // Publish
-    pub_tracks.publish(exl_msg);
+//    pub_tracks.publish(exl_msg);
 
 }
 

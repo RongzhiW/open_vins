@@ -26,7 +26,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/Imu.h>
 #include <std_msgs/Float64.h>
-#include <cv_bridge/cv_bridge.h>
+//#include <cv_bridge/cv_bridge.h>
 
 #include "core/VioManager.h"
 #include "core/RosVisualizer.h"
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
     // Location of the ROS bag we want to read in
     std::string path_to_bag;
     //nhPrivate.param<std::string>("path_bag", path_to_bag, "/home/keck/catkin_ws/V1_01_easy.bag");
-    nh.param<std::string>("path_bag", path_to_bag, "/home/tianu/Documents/DJI/datasets/EucRoc/V2_01_easy.bag");
+    nh.param<std::string>("path_bag", path_to_bag, "/home/dji/Documents/datasets/EucRoc/V2_01_easy.bag");
     ROS_INFO("ros bag path is: %s", path_to_bag.c_str());
 
     // Load groundtruth if we have it
@@ -167,46 +167,55 @@ int main(int argc, char** argv)
         sensor_msgs::Image::ConstPtr s0 = m.instantiate<sensor_msgs::Image>();
         if (s0 != NULL && m.getTopic() == topic_camera0) {
             // Get the image
-            cv_bridge::CvImageConstPtr cv_ptr;
-            try {
-                cv_ptr = cv_bridge::toCvShare(s0, sensor_msgs::image_encodings::MONO8);
-            } catch (cv_bridge::Exception &e) {
-                ROS_ERROR("cv_bridge exception: %s", e.what());
-                continue;
-            }
+//            cv_bridge::CvImageConstPtr cv_ptr;
+//            try {
+//                cv_ptr = cv_bridge::toCvShare(s0, sensor_msgs::image_encodings::MONO8);
+//            } catch (cv_bridge::Exception &e) {
+//                ROS_ERROR("cv_bridge exception: %s", e.what());
+//                continue;
+//            }
+            cv::Mat img_left(s0->height, s0->width, 0, const_cast<uint8_t *>(s0->data.data()));
             // Save to our temp variable
             has_left = true;
-            img0 = cv_ptr->image.clone();
-            time = cv_ptr->header.stamp.toSec();
-            std::cout << std::setprecision(16);
-            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
+//            img0 = cv_ptr->image.clone();
+//            time = cv_ptr->header.stamp.toSec();
+            img0 = img_left.clone();
+            time = s0->header.stamp.toSec();
+//            std::cout << std::setprecision(16);
+//            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << s0->header.stamp.toSec() << std::endl;
         }
 
         // Handle RIGHT camera
         sensor_msgs::Image::ConstPtr s1 = m.instantiate<sensor_msgs::Image>();
         if (s1 != NULL && m.getTopic() == topic_camera1) {
             // Get the image
-            cv_bridge::CvImageConstPtr cv_ptr;
-            try {
-                cv_ptr = cv_bridge::toCvShare(s1, sensor_msgs::image_encodings::MONO8);
-            } catch (cv_bridge::Exception &e) {
-                ROS_ERROR("cv_bridge exception: %s", e.what());
-                continue;
-            }
+//            cv_bridge::CvImageConstPtr cv_ptr;
+//            ROS_INFO("test1.2.2");
+//            try {
+//                ROS_INFO("test1.2.3");
+//                cv_ptr = cv_bridge::toCvShare(s1, sensor_msgs::image_encodings::MONO8);
+//                ROS_INFO("test1.2.4");
+//            } catch (cv_bridge::Exception &e) {
+//                ROS_ERROR("cv_bridge exception: %s", e.what());
+//                continue;
+//            }
+            cv::Mat img_right(s1->height, s1->width, 0, const_cast<uint8_t *>(s1->data.data()));
             // Save to our temp variable (use a right image that is near in time)
             // TODO: fix this logic as the left will still advance instead of waiting
             // TODO: should implement something like here:
             // TODO: https://github.com/rpng/MARS-VINS/blob/master/example_ros/ros_driver.cpp
             //if(std::abs(cv_ptr->header.stamp.toSec()-time) < 0.02) {
             has_right = true;
-            img1 = cv_ptr->image.clone();
+//            img1 = cv_ptr->image.clone();
+            img1 = img_right.clone();
 //            std::cout << std::setprecision(16);
-//            std::cout << "msg_cnt: " << msg_cnt << " right camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
+//            std::cout << "msg_cnt: " << msg_cnt << " right camera stamp: " << s1->header.stamp.toSec() << std::endl;
             //}
         }
         msg_cnt++;
 
 
+        ROS_INFO("test1.3");
         // Fill our buffer if we have not
         if(has_left && img0_buffer.rows == 0) {
             // 第一帧图像不做处理
@@ -255,6 +264,7 @@ int main(int argc, char** argv)
                 // 每次都是处理上一帧
                 sys->feed_measurement_stereo(time_buffer, img0_buffer, img1_buffer, 0, 1);
             }
+            ROS_INFO("test2");
             // visualize
             viz->visualize();
             // reset bools
@@ -264,6 +274,7 @@ int main(int argc, char** argv)
             time_buffer = time;
             img0_buffer = img0.clone();
             img1_buffer = img1.clone();
+            ROS_INFO("test3");
         }
 
     }

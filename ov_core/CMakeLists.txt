@@ -7,24 +7,23 @@ project(ov_core)
 #set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/)
 
 # Find catkin (the ROS build system)
-find_package(catkin REQUIRED COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge)
+#find_package(catkin REQUIRED COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge)
+find_package(catkin REQUIRED COMPONENTS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs)
 
 # Include libraries
 find_package(Eigen3 REQUIRED)
-find_package(OpenCV 3 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem thread date_time)
 
 # display message to user
 message(STATUS "EIGEN VERSION: " ${EIGEN3_VERSION})
-message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
 message(STATUS "BOOST VERSION: " ${Boost_VERSION})
 
 # Describe catkin project
-catkin_package(
-        CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge
-        INCLUDE_DIRS src
-        LIBRARIES ov_core_lib
-)
+#catkin_package(
+#        CATKIN_DEPENDS roscpp rosbag tf std_msgs geometry_msgs sensor_msgs nav_msgs visualization_msgs cv_bridge
+#        INCLUDE_DIRS src
+#        LIBRARIES ov_core_lib
+#)
 
 # Try to compile with c++11
 # http://stackoverflow.com/a/25836953
@@ -45,6 +44,12 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-sign
 # Enable debug flags (use if you want to debug in gdb)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized")
 
+set(OpenCV_DIR "/usr/share/OpenCV")
+find_package(OpenCV 3 REQUIRED)
+
+message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
+message(STATUS "opencv:"${OpenCV_INCLUDE_DIRS})
+
 # Include our header files
 include_directories(
         src
@@ -59,6 +64,9 @@ list(APPEND thirdparty_libraries
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
 )
+message(STATUS "opencv include: ${OpenCV_INCLUDE_DIRS}")
+message(STATUS "catkin lib: ${catkin_LIBRARIES}")
+message(STATUS "opencv lib: ${OpenCV_LIBRARIES}")
 
 ##################################################
 # Make the core library
