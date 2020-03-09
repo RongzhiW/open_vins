@@ -80,6 +80,16 @@ namespace ov_msckf {
          */
         void visualize_final();
 
+        // 发布一些指标状态
+        void pub_statistics();
+        // pub 位姿
+        void pub_IMU(IMU* pose_state);
+        // pub 帧间位姿
+        void pub_pose_diff();
+        void pub_acc_gyr_m(const Eigen::Vector3d& acc, const Eigen::Vector3d& gyr);
+        // error with gt
+        void pub_pose_error(std::map<double, Eigen::Matrix<double,17,1>>& gt_states);
+
 
     protected:
 
@@ -145,6 +155,18 @@ namespace ov_msckf {
         // Files and if we should save total state
         bool save_total_state;
         std::ofstream of_state_est, of_state_std, of_state_gt;
+
+        // 发布帧间位姿
+        nav_msgs::Odometry pose_pre;
+        nav_msgs::Odometry pose_cur;
+        double timestamp_cur = 0, timestamp_pre = 0;
+        Eigen::Matrix3d R_cur, R_pre;
+        Eigen::Quaterniond q_cur, q_pre;
+        Eigen::Vector3d t_cur, t_pre;
+        double dt;
+
+        ros::Publisher pub_rpy_pre_cur;
+        ros::Publisher pub_t_pre_cur;
 
     };
 

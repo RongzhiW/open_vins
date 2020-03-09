@@ -158,6 +158,7 @@ int main(int argc, char** argv)
             Eigen::Matrix<double, 3, 1> wm, am;
             wm << (*s2).angular_velocity.x, (*s2).angular_velocity.y, (*s2).angular_velocity.z;
             am << (*s2).linear_acceleration.x, (*s2).linear_acceleration.y, (*s2).linear_acceleration.z;
+            viz->pub_acc_gyr_m(am, wm);
             // send it to our VIO system
             // imu 数据塞到buffer里
             sys->feed_measurement_imu(timem, wm, am);
@@ -178,8 +179,8 @@ int main(int argc, char** argv)
             has_left = true;
             img0 = cv_ptr->image.clone();
             time = cv_ptr->header.stamp.toSec();
-            std::cout << std::setprecision(16);
-            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
+//            std::cout << std::setprecision(16);
+//            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << cv_ptr->header.stamp.toSec() << std::endl;
         }
 
         // Handle RIGHT camera
@@ -257,6 +258,9 @@ int main(int argc, char** argv)
             }
             // visualize
             viz->visualize();
+            if (sys->intialized()) {
+                viz->pub_pose_error(gt_states);
+            }
             // reset bools
             has_left = false;
             has_right = false;
