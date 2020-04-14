@@ -138,8 +138,8 @@ namespace ov_core {
         int min_px_dist;
 
         // How many pyramid levels to track on and the window size to reduce by
-        int pyr_levels = 3;
-        cv::Size win_size = cv::Size(15, 15);
+        int pyr_levels = 4;
+        cv::Size win_size = cv::Size(25, 25);
 
         // Last set of image pyramids
         std::map<size_t, std::vector<cv::Mat>> img_pyramid_last;

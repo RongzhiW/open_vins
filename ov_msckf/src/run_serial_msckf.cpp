@@ -215,7 +215,8 @@ int main(int argc, char** argv)
 //            img1 = img_right.clone();
             time1 = cv_ptr->header.stamp.toSec();
             cv::imshow("right_image", img1);
-            cv::waitKey(0);
+            cv::waitKey(10);
+//            cv::waitKey(0);
 //            std::cout << std::setprecision(16);
 //            std::cout << "msg_cnt: " << msg_cnt << " right camera stamp: " << s1->header.stamp.toSec() << std::endl;
             //}

@@ -48,7 +48,7 @@ VioManager::VioManager(ros::NodeHandle &nh) {
     nh.param<bool>("calib_cam_timeoffset", state_options.do_calib_camera_timeoffset, false);
     nh.param<int>("max_clones", state_options.max_clone_size, 10);
     nh.param<int>("max_slam", state_options.max_slam_features, 0);
-    nh.param<int>("max_aruco", state_options.max_aruco_features, 1024);
+    nh.param<int>("max_aruco", state_options.max_aruco_features, 0);
     nh.param<int>("max_cameras", state_options.num_cameras, 1);
     nh.param<double>("dt_slam_delay", dt_statupdelay, 3);
 
@@ -420,6 +420,7 @@ void VioManager::feed_measurement_stereo(double timestamp, cv::Mat& img0, cv::Ma
 
     Eigen::Matrix3d rot_ItoG = quat_2_Rot(state->imu()->quat()).transpose();
     Eigen::Vector3d euler_ItoG = rot_ItoG.eulerAngles(2, 1, 0);
+    euler_ItoG *= 180.0/M_PI;
     std::cout << "init euler: " << euler_ItoG.transpose() << "\n";
     ROS_INFO("\033[0;32m[run]: euler = %.4f, %.4f, %.4f\033[0m", euler_ItoG(0), euler_ItoG(1), euler_ItoG(2));
     ROS_INFO("\033[0;32m[run]: orientation = %.4f, %.4f, %.4f, %.4f\033[0m",state->imu()->quat()(0),state->imu()->quat()(1),state->imu()->quat()(2),state->imu()->quat()(3));
@@ -500,7 +501,8 @@ bool VioManager::try_to_initialize() {
 
         Eigen::Matrix3d rot_ItoG = quat_2_Rot(q_GtoI0).transpose();
         Eigen::Vector3d euler_ItoG = rot_ItoG.eulerAngles(2, 1, 0);
-        std::cout << "init euler: " << euler_ItoG.transpose() << "\n";
+        euler_ItoG *= 180.0/M_PI;
+        ROS_INFO("\033[0;32m[INIT]: euler = %.4f, %.4f, %.4f\033[0m",euler_ItoG(0), euler_ItoG(1), euler_ItoG(2));
         // Else we are good to go, print out our stats
         ROS_INFO("\033[0;32m[INIT]: orientation = %.4f, %.4f, %.4f, %.4f\033[0m",state->imu()->quat()(0),state->imu()->quat()(1),state->imu()->quat()(2),state->imu()->quat()(3));
         ROS_INFO("\033[0;32m[INIT]: bias gyro = %.4f, %.4f, %.4f\033[0m",state->imu()->bias_g()(0),state->imu()->bias_g()(1),state->imu()->bias_g()(2));
@@ -686,7 +688,6 @@ void VioManager::do_feature_propagate_update(double timestamp) {
 
     // Pass them to our MSCKF updater
     // We update first so that our SLAM initialization will be more accurate??
-//    printf("featsup_MSCK size:%d\n", featsup_MSCKF.size());
     updaterMSCKF->update(state, featsup_MSCKF);
     rT4 =  boost::posix_time::microsec_clock::local_time();
 

@@ -99,6 +99,7 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
         // Triangulate the feature and remove if it fails
         bool success = initializer_feat->single_triangulation(*it1, clones_cam);
         if(!success) {
+            std::cout << "fail in triangulation! id: " << (*it1)->featid << std::endl;
             (*it1)->to_delete = true;
             it1 = feature_vec.erase(it1);
             continue;
@@ -108,11 +109,12 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
 //        std::cout << "triangulate p_FinA: " << (*it1)->p_FinA.transpose() << std::endl;
         success = initializer_feat->single_gaussnewton(*it1, clones_cam);
 //        std::cout << "gaussnewton: " << (*it1)->p_FinA.transpose() << std::endl;
-        if(!success) {
-            (*it1)->to_delete = true;
-            it1 = feature_vec.erase(it1);
-            continue;
-        }
+//        if(!success) {
+//            std::cout << "fail in gaussnewton ! id: " << (*it1)->featid << std::endl;
+//            (*it1)->to_delete = true;
+//            it1 = feature_vec.erase(it1);
+//            continue;
+//        }
         it1++;
 
     }
@@ -140,6 +142,7 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
     size_t ct_meas = 0;
 
 
+    std::cout << "used in msckf update size: " << feature_vec.size() << "\n";
     // 4. Compute linear system for each feature, nullspace project, and reject
     auto it2 = feature_vec.begin();
     while(it2 != feature_vec.end()) {
