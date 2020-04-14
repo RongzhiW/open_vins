@@ -1,0 +1,90 @@
+<launch>
+
+    <node name="run_serial_msckf" pkg="ov_msckf" type="run_serial_msckf" output="screen">
+
+        <!-- bag topics -->
+        <param name="topic_imu"      type="string" value="/imu0" />
+        <param name="topic_camera0"  type="string" value="/cam0/image_raw" />
+        <param name="topic_camera1"  type="string" value="/cam1/image_raw" />
+
+        <!-- bag parameters -->
+        <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq1.bag" />
+        <param name="bag_start"   type="int"    value="0" />
+        <param name="bag_durr"    type="int"    value="-1" />
+
+        <!-- ground truth -->
+        <param name="path_gthaha"    type="string" value="/home/dji/Documents/datasets/EucRoc/V2_01_easy/mav0/state_groundtruth_estimate0/data.csv" />
+
+        <!-- world/filter parameters -->
+        <param name="max_clones"             type="int"    value="11" />
+        <param name="max_slam"               type="int"    value="30" />
+        <param name="max_cameras"            type="int"    value="2" />
+        <param name="feat_representation"    type="string" value="ANCHORED_MSCKF_INVERSE_DEPTH" />
+        <param name="init_window_time"       type="double" value="0.5" />
+        <param name="init_imu_thresh"        type="double" value="2.0" />
+        <rosparam param="gravity">[0.0,0.0,9.81]</rosparam>
+
+        <!-- tracker/extractor parameters -->
+        <param name="use_klt"          type="bool"   value="true" />
+        <param name="fast_threshold"   type="int"    value="10" />
+        <param name="grid_x"           type="int"    value="5" />
+        <param name="grid_y"           type="int"    value="3" />
+        <param name="min_px_dist"      type="int"    value="10" />
+        <param name="num_pts"          type="int"    value="400" />
+
+        <!-- sensor noise values / update -->
+        <param name="up_msckf_sigma_px"            type="double"   value="1" />
+        <param name="up_msckf_chi2_multipler"      type="double"   value="1" />
+        <param name="gyroscope_noise_density"      type="double"   value="8.0e-05" />
+        <param name="gyroscope_random_walk"        type="double"   value="2.2e-06" />
+        <param name="accelerometer_noise_density"  type="double"   value="1.4000e-3" />
+        <param name="accelerometer_random_walk"    type="double"   value="8.60000e-5" />
+
+        <!-- camera intrinsics -->
+        <param name="cam0_is_fisheye" type="bool" value="false" />
+        <param name="cam1_is_fisheye" type="bool" value="false" />
+        <rosparam param="cam0_k">[743.4286936207343, 743.5545205462922, 618.7186883884866, 506.7275058699658]</rosparam>
+        <rosparam param="cam0_d">[0.023584346301328347, -0.006764098468377487, 0.010259071387776937, -0.0037561745737771414]</rosparam>
+        <rosparam param="cam1_k">[739.1654756101043, 739.1438452683457, 625.826167006398, 517.3370973594253]</rosparam>
+        <rosparam param="cam1_d">[0.019327620961435945, 0.006784242994724914, -0.008658628531456217, 0.0051893686731546585]</rosparam>
+
+        <!-- camera extrinsics -->
+        <rosparam param="T_C0toI">
+            [
+            -0.00596386, -0.999963, -0.00622983, 0.00780706,
+              -0.999955,  0.00600971, -0.00736667, 0.0521473,
+             0.00740384,  0.00618561, -0.999953,-0.0428453,
+            0.0, 0.0, 0.0, 1.0
+            ]
+        </rosparam>
+        <rosparam param="T_ItoC0">
+            [
+            -0.00596386151962109, -0.9999548067377452, 0.0074038393994521196, 0.05250867995679271,
+            -0.9999628101053462, 0.006009708608102947, 0.006185613038727172, 0.0077584026106338085,
+            -0.006229828408066805, -0.007366673911867888, -0.999953459593736, -0.04241050920541196,
+            0.0, 0.0, 0.0, 1.0
+            ]
+        </rosparam>
+
+        <rosparam param="T_C1toI">
+            [
+            -0.00276873,   -0.999936,  -0.0110011,  0.00699407,
+              -0.999987,  0.00281495, -0.00418819,  -0.0570823,
+             0.00421888,   0.0109894,   -0.999931,  -0.0422772,
+                      0,           0,           0,           1
+            ]
+        </rosparam>
+        <rosparam param="T_I2C1">
+            [
+            -0.0027687291789002095, -0.9999872674970001, 0.004218884048773266, -0.05688384754602901,
+            -0.9999356528558058, 0.002814949729190873, 0.010989367855138411, 0.007618902284014501,
+            -0.011001103879489809, -0.004188185992194848, -0.9999307150055582, -0.042436390295094266,
+            0.0, 0.0, 0.0, 1.0
+            ]
+        </rosparam>
+
+    </node>
+
+    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ov_msckf)/launch/display.rviz" />
+
+</launch>

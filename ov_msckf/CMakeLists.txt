@@ -47,11 +47,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fsee -fomit-frame-pointer -fno-sign
 # Enable debug flags (use if you want to debug in gdb)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3 -Wall -Wuninitialized -Wmaybe-uninitialized")
 
-set(OpenCV_DIR "/usr/share/OpenCV")
+set(OpenCV_DIR "/usr/local/share/OpenCV")
 find_package(OpenCV 3 REQUIRED)
 
 message(STATUS "OPENCV VERSION: " ${OpenCV_VERSION})
 message(STATUS "opencv:"${OpenCV_INCLUDE_DIRS})
+find_package(cv_bridge REQUIRED)
+message(STATUS "cv_bridge include:${cv_bridge_INCLUDE_DIRS}")
+message(STATUS "cv_bridge lib:${cv_bridge_LIBRARIES}")
 
 # Include our header files
 include_directories(
@@ -60,6 +63,7 @@ include_directories(
         ${EIGEN3_INCLUDE_DIR}
         ${Boost_INCLUDE_DIRS}
         ${catkin_INCLUDE_DIRS}
+        ${cv_bridge_INCLUDE_DIRS}
 )
 
 
@@ -68,6 +72,7 @@ list(APPEND thirdparty_libraries
         ${Boost_LIBRARIES}
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
+        ${cv_bridge_LIBRARIES}
 )
 
 message(STATUS "catkin lib:"${catkin_LIBRARIES})

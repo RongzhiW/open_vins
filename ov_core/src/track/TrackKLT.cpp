@@ -141,26 +141,26 @@ void TrackKLT::feed_stereo(double timestamp, cv::Mat &img_leftin, cv::Mat &img_r
 
     // Histogram equalize
     cv::Mat img_left, img_right;
-//    boost::thread t_lhe = boost::thread(cv::equalizeHist, boost::cref(img_leftin), boost::ref(img_left));
-//    boost::thread t_rhe = boost::thread(cv::equalizeHist, boost::cref(img_rightin), boost::ref(img_right));
-//    t_lhe.join();
-//    t_rhe.join();
-    cv::equalizeHist(img_leftin, img_left);
-    cv::equalizeHist(img_rightin, img_right);
+    boost::thread t_lhe = boost::thread(cv::equalizeHist, boost::cref(img_leftin), boost::ref(img_left));
+    boost::thread t_rhe = boost::thread(cv::equalizeHist, boost::cref(img_rightin), boost::ref(img_right));
+    t_lhe.join();
+    t_rhe.join();
+//    cv::equalizeHist(img_leftin, img_left);
+//    cv::equalizeHist(img_rightin, img_right);
 
     // 提取pyramid的border和计算gradient的border类型不一样?
     // Extract image pyramids (boost seems to require us to put all the arguments even if there are defaults....)
     std::vector<cv::Mat> imgpyr_left, imgpyr_right;
-//    boost::thread t_lp = boost::thread(cv::buildOpticalFlowPyramid, boost::cref(img_left),
-//                                       boost::ref(imgpyr_left), boost::ref(win_size), boost::ref(pyr_levels), false,
-//                                       cv::BORDER_REFLECT_101, cv::BORDER_CONSTANT, true);
-//    boost::thread t_rp = boost::thread(cv::buildOpticalFlowPyramid, boost::cref(img_right),
-//                                       boost::ref(imgpyr_right), boost::ref(win_size), boost::ref(pyr_levels),
-//                                       false, cv::BORDER_REFLECT_101, cv::BORDER_CONSTANT, true);
-//    t_lp.join();
-//    t_rp.join();
-    cv::buildOpticalFlowPyramid(img_left, imgpyr_left, win_size, pyr_levels, false, cv::BORDER_REFLECT101, cv::BORDER_CONSTANT, true);
-    cv::buildOpticalFlowPyramid(img_right, imgpyr_right, win_size, pyr_levels, false, cv::BORDER_REFLECT101, cv::BORDER_CONSTANT, true);
+    boost::thread t_lp = boost::thread(cv::buildOpticalFlowPyramid, boost::cref(img_left),
+                                       boost::ref(imgpyr_left), boost::ref(win_size), boost::ref(pyr_levels), false,
+                                       cv::BORDER_REFLECT_101, cv::BORDER_CONSTANT, true);
+    boost::thread t_rp = boost::thread(cv::buildOpticalFlowPyramid, boost::cref(img_right),
+                                       boost::ref(imgpyr_right), boost::ref(win_size), boost::ref(pyr_levels),
+                                       false, cv::BORDER_REFLECT_101, cv::BORDER_CONSTANT, true);
+    t_lp.join();
+    t_rp.join();
+//    cv::buildOpticalFlowPyramid(img_left, imgpyr_left, win_size, pyr_levels, false, cv::BORDER_REFLECT101, cv::BORDER_CONSTANT, true);
+//    cv::buildOpticalFlowPyramid(img_right, imgpyr_right, win_size, pyr_levels, false, cv::BORDER_REFLECT101, cv::BORDER_CONSTANT, true);
     rT2 =  boost::posix_time::microsec_clock::local_time();
 
     // If we didn't have any successful tracks last time, just extract this time

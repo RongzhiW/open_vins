@@ -88,10 +88,10 @@ bool InertialInitializer::initialize_with_imu(double &time0, Eigen::Matrix<doubl
     a_var = std::sqrt(a_var/((int)window_newest.size()-1));
 
     // If it is below the threshold just return
-    if(a_var < _imu_excite_threshold) {
-        ROS_WARN("InertialInitializer::initialize_with_imu(): no IMU excitation, below threshold %.4f < %.4f",a_var,_imu_excite_threshold);
-        return false;
-    }
+//    if(a_var < _imu_excite_threshold) {
+//        ROS_WARN("InertialInitializer::initialize_with_imu(): no IMU excitation, below threshold %.4f < %.4f",a_var,_imu_excite_threshold);
+//        return false;
+//    }
 
     // Return if we don't have any measurements
     //if(imu_data.size() < 200) {
@@ -115,6 +115,7 @@ bool InertialInitializer::initialize_with_imu(double &time0, Eigen::Matrix<doubl
 
     // Get z axis, which alines with -g (z_in_G=0,0,1)
     Eigen::Vector3d z_axis = linavg/linavg.norm();
+    std::cout << "z_axis: " << z_axis.transpose() << "\n";
 
     // Create an x_axis
     Eigen::Vector3d e_1(1,0,0);
@@ -137,9 +138,7 @@ bool InertialInitializer::initialize_with_imu(double &time0, Eigen::Matrix<doubl
 
     // Set our biases equal to our noise (subtract our gravity from accelerometer bias)
     Eigen::Matrix<double,3,1> bg = angavg;
-    // 如果是完全静止, 且9.81无误差的话, 这肯定是0啊...
-    // ba初始化有问题
-    Eigen::Matrix<double,3,1> ba = linavg- quat_2_Rot(q_GtoI)*_gravity;
+    Eigen::Matrix<double,3,1> ba = linavg - quat_2_Rot(q_GtoI)*_gravity;
 
 
     // Set our state variables

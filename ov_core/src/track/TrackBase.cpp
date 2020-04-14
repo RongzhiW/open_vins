@@ -105,12 +105,12 @@ void TrackBase::display_history(cv::Mat &img_out, int r1, int g1, int b1, int r2
     bool image_new = ((int)img_last.size()*max_width != img_out.cols || max_height != img_out.rows);
 
     // If new, then resize the current image
-    if(image_new) img_out = cv::Mat(max_height,(int)img_last.size()*max_width,CV_8UC3,cv::Scalar(0,0,0));
+    if(image_new) img_out = cv::Mat((int)img_last.size()*max_height, max_width,CV_8UC3,cv::Scalar(0,0,0));
 
 
     // Max tracks to show (otherwise it clutters up the screen)
-    //size_t maxtracks = 10;
-    size_t maxtracks = (size_t)-1;
+    size_t maxtracks = 3;
+//    size_t maxtracks = (size_t)1;
 
     // Loop through each image, and draw
     for(auto const& pair : img_last) {
@@ -119,7 +119,7 @@ void TrackBase::display_history(cv::Mat &img_out, int r1, int g1, int b1, int r2
         // select the subset of the image
         cv::Mat img_temp;
         if(image_new) cv::cvtColor(img_last[pair.first], img_temp, CV_GRAY2RGB);
-        else img_temp = img_out(cv::Rect(max_width*pair.first,0,max_width,max_height));
+        else img_temp = img_out(cv::Rect(0, max_height*pair.first, max_width,max_height));
         // draw, loop through all keypoints
         for(size_t i=0; i<ids_last[pair.first].size(); i++) {
             // Get the feature from the database
@@ -138,7 +138,7 @@ void TrackBase::display_history(cv::Mat &img_out, int r1, int g1, int b1, int r2
                 int color_b = b2-(int)(b1/feat->uvs[pair.first].size()*z);
                 // Draw current point
                 cv::Point2f pt_c(feat->uvs[pair.first].at(z)(0),feat->uvs[pair.first].at(z)(1));
-                cv::circle(img_temp, pt_c, 2, cv::Scalar(color_r,color_g,color_b), CV_FILLED);
+                cv::circle(img_temp, pt_c, 4, cv::Scalar(color_r,color_g,color_b), CV_FILLED);
                 // If there is a next point, then display the line from this point to the next
                 if(z+1 < feat->uvs[pair.first].size()) {
                     cv::Point2f pt_n(feat->uvs[pair.first].at(z+1)(0),feat->uvs[pair.first].at(z+1)(1));
@@ -154,7 +154,7 @@ void TrackBase::display_history(cv::Mat &img_out, int r1, int g1, int b1, int r2
         // Draw what camera this is
         cv::putText(img_temp, "CAM:"+std::to_string((int)pair.first), cv::Point(30,60), cv::FONT_HERSHEY_COMPLEX_SMALL, 3.0, cv::Scalar(0,255,0),3);
         // Replace the output image
-        img_temp.copyTo(img_out(cv::Rect(max_width*pair.first,0,img_last[pair.first].cols,img_last[pair.first].rows)));
+        img_temp.copyTo(img_out(cv::Rect(0, max_height*pair.first, img_last[pair.first].cols,img_last[pair.first].rows)));
     }
 
 }

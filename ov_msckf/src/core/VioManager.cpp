@@ -168,6 +168,7 @@ VioManager::VioManager(ros::NodeHandle &nh) {
                 matrix_TCtoI.at(8),matrix_TCtoI.at(9),matrix_TCtoI.at(10),matrix_TCtoI.at(11),
                 matrix_TCtoI.at(12),matrix_TCtoI.at(13),matrix_TCtoI.at(14),matrix_TCtoI.at(15);
 
+
         // Load these into our state
         Eigen::Matrix<double,7,1> cam_eigen;
         cam_eigen.block(0,0,4,1) = rot_2_quat(T_CtoI.block(0,0,3,3).transpose());
@@ -416,6 +417,18 @@ void VioManager::feed_measurement_stereo(double timestamp, cv::Mat& img0, cv::Ma
     // Call on our propagate and update function
     do_feature_propagate_update(timestamp);
 
+
+    Eigen::Matrix3d rot_ItoG = quat_2_Rot(state->imu()->quat()).transpose();
+    Eigen::Vector3d euler_ItoG = rot_ItoG.eulerAngles(2, 1, 0);
+    std::cout << "init euler: " << euler_ItoG.transpose() << "\n";
+    ROS_INFO("\033[0;32m[run]: euler = %.4f, %.4f, %.4f\033[0m", euler_ItoG(0), euler_ItoG(1), euler_ItoG(2));
+    ROS_INFO("\033[0;32m[run]: orientation = %.4f, %.4f, %.4f, %.4f\033[0m",state->imu()->quat()(0),state->imu()->quat()(1),state->imu()->quat()(2),state->imu()->quat()(3));
+    ROS_INFO("\033[0;32m[run]: bias gyro = %.4f, %.4f, %.4f\033[0m",state->imu()->bias_g()(0),state->imu()->bias_g()(1),state->imu()->bias_g()(2));
+    ROS_INFO("\033[0;32m[run]: velocity = %.4f, %.4f, %.4f\033[0m",state->imu()->vel()(0),state->imu()->vel()(1),state->imu()->vel()(2));
+    ROS_INFO("\033[0;32m[run]: bias accel = %.4f, %.4f, %.4f\033[0m",state->imu()->bias_a()(0),state->imu()->bias_a()(1),state->imu()->bias_a()(2));
+    ROS_INFO("\033[0;32m[run]: position = %.4f, %.4f, %.4f\033[0m",state->imu()->pos()(0),state->imu()->pos()(1),state->imu()->pos()(2));
+
+
 }
 
 
@@ -485,6 +498,9 @@ bool VioManager::try_to_initialize() {
         // 这里的time0是newest_time - 0.5
         state->set_timestamp(time0);
 
+        Eigen::Matrix3d rot_ItoG = quat_2_Rot(q_GtoI0).transpose();
+        Eigen::Vector3d euler_ItoG = rot_ItoG.eulerAngles(2, 1, 0);
+        std::cout << "init euler: " << euler_ItoG.transpose() << "\n";
         // Else we are good to go, print out our stats
         ROS_INFO("\033[0;32m[INIT]: orientation = %.4f, %.4f, %.4f, %.4f\033[0m",state->imu()->quat()(0),state->imu()->quat()(1),state->imu()->quat()(2),state->imu()->quat()(3));
         ROS_INFO("\033[0;32m[INIT]: bias gyro = %.4f, %.4f, %.4f\033[0m",state->imu()->bias_g()(0),state->imu()->bias_g()(1),state->imu()->bias_g()(2));

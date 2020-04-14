@@ -64,6 +64,12 @@ list(APPEND thirdparty_libraries
         ${OpenCV_LIBRARIES}
         ${catkin_LIBRARIES}
 )
+
+get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+foreach(dir ${dirs})
+    message(STATUS "include_dir='${dir}'")
+endforeach()
+
 message(STATUS "opencv include: ${OpenCV_INCLUDE_DIRS}")
 message(STATUS "catkin lib: ${catkin_LIBRARIES}")
 message(STATUS "opencv lib: ${OpenCV_LIBRARIES}")
