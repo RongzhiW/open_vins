@@ -109,6 +109,8 @@ namespace ov_msckf {
             // Initialize the system
             state->imu()->set_value(imustate.block(1,0,16,1));
             state->set_timestamp(imustate(0,0));
+            init_imu = new IMU();
+            init_imu->set_value(imustate.block(1,0,16,1));
             is_initialized_vio = true;
 
             // Print what we init'ed with
@@ -130,6 +132,12 @@ namespace ov_msckf {
         /// Accessor to get the current state
         State* get_state() {
             return state;
+        }
+
+        IMU* get_init_imu() {
+            if (is_initialized_vio)
+                return init_imu;
+            return nullptr;
         }
 
         /// Get feature tracker
@@ -218,6 +226,7 @@ namespace ov_msckf {
 
         /// Our master state object :D
         State* state;
+        IMU* init_imu;
 
         /// Propagator of our state
         Propagator* propagator;

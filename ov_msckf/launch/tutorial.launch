@@ -69,5 +69,6 @@
     </node>
 
     <node type="rviz" name="rviz" pkg="rviz" args="-d $(find ov_msckf)/launch/display.rviz" />
+    <node type="rqt_gui" name="rqt_gui" pkg="rqt_gui" args="--perspective-file $(find ov_msckf)/launch/statistics.perspective" />
 
 </launch>

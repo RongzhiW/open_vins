@@ -19,6 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "RosVisualizer.h"
+#include "../../ov_eval/src/utils/Math.h"
 
 
 using namespace ov_msckf;
@@ -58,6 +59,9 @@ RosVisualizer::RosVisualizer(ros::NodeHandle &nh, VioManager* app, Simulator *si
     ROS_INFO("Publishing: %s", pub_posegt.getTopic().c_str());
     pub_pathgt = nh.advertise<nav_msgs::Path>("/ov_msckf/pathgt", 2);
     ROS_INFO("Publishing: %s", pub_pathgt.getTopic().c_str());
+
+    pub_rpy_pre_cur = nh.advertise<geometry_msgs::Vector3Stamped>("/ov_msckf/rpy_pre_cur", 2);
+    pub_t_pre_cur = nh.advertise<geometry_msgs::Vector3Stamped>("/ov_msckf/t_pre_cur", 2);
 
     // Load groundtruth if we have it and are not doing simulation
     if (nh.hasParam("path_gt") && _sim==nullptr) {
@@ -133,6 +137,8 @@ void RosVisualizer::visualize() {
     if(save_total_state)
         sim_save_total_state_to_file();
 
+    // display statistics of states
+    pub_statistics();
 }
 
 
@@ -251,11 +257,28 @@ void RosVisualizer::publish_state() {
     trans.stamp_ = ros::Time::now();
     trans.frame_id_ = "global";
     trans.child_frame_id_ = "imu";
-    tf::Quaternion quat(state->imu()->quat()(0),state->imu()->quat()(1),state->imu()->quat()(2),state->imu()->quat()(3));
+    tf::Quaternion quat(-state->imu()->quat()(0),-state->imu()->quat()(1),-state->imu()->quat()(2),state->imu()->quat()(3));
     trans.setRotation(quat);
     tf::Vector3 orig(state->imu()->pos()(0),state->imu()->pos()(1),state->imu()->pos()(2));
     trans.setOrigin(orig);
     mTfBr->sendTransform(trans);
+
+    tf::StampedTransform trans2;
+    trans2.stamp_ = ros::Time::now();
+    trans2.frame_id_ = "global";
+    trans2.child_frame_id_ = "global2";
+    Eigen::Matrix3d R;
+    R << 1, 0, 0, 0, 0, -1, 0, 1, 0;
+    std::cout << "global2 R: " << R << std::endl;
+    Eigen::Quaterniond global_q_inv(R);
+    Eigen::Quaterniond  global_q = global_q_inv.inverse();
+    std::cout << "global_q: " << global_q.x() << " " << global_q.y() << " " << global_q.z() << " " << global_q.w() << std::endl;
+    std::cout << "global_q_inv: " << global_q_inv.x() << " " << global_q_inv.y() << " " << global_q_inv.z() << " " << global_q_inv.w() << std::endl;
+    tf::Quaternion quat2(global_q.x(), global_q.y(), global_q.z(), global_q.w());
+    trans2.setRotation(quat2);
+    tf::Vector3 orig2(1.0, 0, 0);
+    trans2.setOrigin(orig2);
+    mTfBr->sendTransform(trans2);
 
     // Loop through each camera calibration and publish it
     for(const auto &calib : state->get_calib_IMUtoCAMs()) {
@@ -708,8 +731,172 @@ void RosVisualizer::sim_save_total_state_to_file() {
 
 }
 
+void RosVisualizer::pub_statistics() {
+    pub_IMU(_app->get_state()->imu());
+    pub_pose_diff();
+}
+
+void RosVisualizer::pub_acc_gyr_m(const Eigen::Vector3d& acc, const Eigen::Vector3d& gyr) {
+    static ros::Publisher pub_acc_m = _nh.advertise<geometry_msgs::Vector3>("/ov_msckf/acc_m", 2);
+    geometry_msgs::Vector3 acc_m_msg;
+    acc_m_msg.x = acc(0);
+    acc_m_msg.y = acc(1);
+    acc_m_msg.z = acc(2);
+    pub_acc_m.publish(acc_m_msg);
+
+    static ros::Publisher pub_gyr_m = _nh.advertise<geometry_msgs::Vector3>("/ov_msckf/gyr_m", 2);
+    geometry_msgs::Vector3 gyr_m_msg;
+    gyr_m_msg.x = gyr(0);
+    gyr_m_msg.y = gyr(1);
+    gyr_m_msg.z = gyr(2);
+    pub_gyr_m.publish(gyr_m_msg);
+
+}
+void RosVisualizer::pub_IMU(IMU* pose_state) {
+    // roll,pitch,yaw
+    Eigen::Quaterniond init_qG2I;
+    init_qG2I.x() = _app->get_init_imu()->quat()(0);
+    init_qG2I.y() = _app->get_init_imu()->quat()(1);
+    init_qG2I.z() = _app->get_init_imu()->quat()(2);
+    init_qG2I.w() = _app->get_init_imu()->quat()(3);
 
 
+    Eigen::Quaterniond qG2I;
+    qG2I.x() = pose_state->quat()(0);
+    qG2I.y() = pose_state->quat()(1);
+    qG2I.z() = pose_state->quat()(2);
+    qG2I.w() = pose_state->quat()(3);
+//    Eigen::Vector3d rpy = ov_eval::Math::rot2rpy(q.toRotationMatrix());
+    Eigen::Quaterniond  qI2G = qG2I.inverse();
+    Eigen::Quaterniond qI2InitI = init_qG2I * qI2G;
+    Eigen::Vector3d ypr1 = qI2InitI.toRotationMatrix().eulerAngles(2,1,0);
+    Eigen::Vector3d ypr = ov_eval::Math::rot2rpy(qI2InitI.toRotationMatrix());
+//    Eigen::Vector3d ypr = ov_eval::Math::rot2rpy(qI2InitI1.toRotationMatrix());
+    ypr(0) = ypr(0) * 180.0 / M_PI;
+    ypr(1) = ypr(1) * 180.0 / M_PI;
+    ypr(2) = ypr(2) * 180.0 / M_PI;
+    std::cout << "ypr1: " << ypr1.transpose() << " ypr: " << ypr.transpose() << std::endl;
 
+    static ros::Publisher pub_rpy = _nh.advertise<geometry_msgs::Vector3>("/ov_msckf/rpy", 200);
+    geometry_msgs::Vector3 rpy_msg;
+    rpy_msg.x = ypr(0);
+    rpy_msg.y = ypr(1);
+    rpy_msg.z = ypr(2);
+    pub_rpy.publish(rpy_msg);
 
+    // ba,bg
+    static ros::Publisher pub_ba = _nh.advertise<geometry_msgs::Vector3>("/ov_msckf/ba", 2);
+    geometry_msgs::Vector3 ba_msg;
+    ba_msg.x = pose_state->ba()->value()(0);
+    ba_msg.y = pose_state->ba()->value()(1);
+    ba_msg.z = pose_state->ba()->value()(2);
+    pub_ba.publish(ba_msg);
+    static ros::Publisher pub_bg = _nh.advertise<geometry_msgs::Vector3>("/ov_msckf/bg", 2);
+    geometry_msgs::Vector3 bg_msg;
+    bg_msg.x = pose_state->bg()->value()(0);
+    bg_msg.y = pose_state->bg()->value()(1);
+    bg_msg.z = pose_state->bg()->value()(2);
+    pub_bg.publish(bg_msg);
+}
 
+void RosVisualizer::pub_pose_diff() {
+    static bool first_pose = true;
+    State* state_cur = _app->get_state();
+    timestamp_cur = state_cur->timestamp();
+    q_cur.x() = state_cur->imu()->quat()(0);
+    q_cur.y() = state_cur->imu()->quat()(1);
+    q_cur.z() = state_cur->imu()->quat()(2);
+    q_cur.w() = state_cur->imu()->quat()(3);
+    R_cur = q_cur.toRotationMatrix();
+    Eigen::Vector3d rpy_cur = ov_eval::Math::rot2rpy(R_cur);
+    Eigen::Vector3d ypr_cur_eig = q_cur.toRotationMatrix().eulerAngles(2, 1, 0);
+    ypr_cur_eig *= 180.0 / M_PI;
+    std::cout << "ypr_cur_eig: " << ypr_cur_eig.transpose() << std::endl;
+    rpy_cur(0) = rpy_cur(0) * 180.0 / M_PI;
+    rpy_cur(1) = rpy_cur(1) * 180.0 / M_PI;
+    rpy_cur(2) = rpy_cur(2) * 180.0 / M_PI;
+    t_cur(0) = state_cur->imu()->pos()(0);
+    t_cur(1) = state_cur->imu()->pos()(1);
+    t_cur(2) = state_cur->imu()->pos()(2);
+    std::cout << "dt: " << (timestamp_cur - timestamp_pre) << " tm: " << timestamp_cur << " rpy_cur:" << rpy_cur.transpose() << " t_cur:" << t_cur.transpose() << std::endl;
+    if (first_pose) {
+        timestamp_pre = timestamp_cur;
+        q_pre = q_cur;
+        R_pre = R_cur;
+        t_pre = t_cur;
+        first_pose = false;
+        return;
+    }
+    Eigen::Quaterniond q_pre_cur = q_pre * q_cur.inverse();
+    Eigen::Vector3d rpy_pre_cur = ov_eval::Math::rot2rpy(q_pre_cur.toRotationMatrix());
+    rpy_pre_cur(0) = rpy_pre_cur(0) * 180.0 / M_PI;
+    rpy_pre_cur(1) = rpy_pre_cur(1) * 180.0 / M_PI;
+    rpy_pre_cur(2) = rpy_pre_cur(2) * 180.0 / M_PI;
+    Eigen::Vector3d t_pre_cur = t_pre - q_pre_cur * t_cur;
+    geometry_msgs::Vector3Stamped rpy_pre_cur_msg;
+    rpy_pre_cur_msg.header.stamp = ros::Time(timestamp_cur);
+    rpy_pre_cur_msg.vector.x = rpy_pre_cur(0);
+    rpy_pre_cur_msg.vector.y = rpy_pre_cur(1);
+    rpy_pre_cur_msg.vector.z = rpy_pre_cur(2);
+
+    geometry_msgs::Vector3Stamped t_pre_cur_msg;
+    t_pre_cur_msg.header.stamp = ros::Time(timestamp_cur);
+    t_pre_cur_msg.vector.x = t_pre_cur(0);
+    t_pre_cur_msg.vector.y = t_pre_cur(1);
+    t_pre_cur_msg.vector.z = t_pre_cur(2);
+
+    pub_rpy_pre_cur.publish(rpy_pre_cur_msg);
+    pub_t_pre_cur.publish(t_pre_cur_msg);
+
+    // update pre state
+    timestamp_pre = timestamp_cur;
+    q_pre = q_cur;
+    R_pre = R_cur;
+    t_pre = t_cur;
+
+//    pose_cur.header.stamp = ros::Time(state_cur->timestamp());
+//    pose_cur.pose.pose.orientation.x = state_cur->imu()->quat()(0);
+//    pose_cur.pose.pose.orientation.y = state_cur->imu()->quat()(1);
+//    pose_cur.pose.pose.orientation.z = state_cur->imu()->quat()(2);
+//    pose_cur.pose.pose.orientation.w = state_cur->imu()->quat()(3);
+//    pose_cur.pose.pose.position.x = state_cur->imu()->pos()(0);
+//    pose_cur.pose.pose.position.y = state_cur->imu()->pos()(1);
+//    pose_cur.pose.pose.position.z = state_cur->imu()->pos()(2);
+    // calculate pose diff
+//    geometry_msgs::
+//    Eigen::Quaterniond q_cur{pose_cur.pose.pose.orientation.w, };
+}
+
+void RosVisualizer::pub_pose_error(std::map<double, Eigen::Matrix<double,17,1>>& gt_states) {
+    State* state_cur = _app->get_state();
+    Eigen::Matrix<double, 17, 1> gt_state;
+    if (DatasetReader::get_gt_state(state_cur->timestamp(), gt_state, gt_states)) {
+        Eigen::Quaterniond gt_qG2I;
+        gt_qG2I.x() = gt_state(1, 0);
+        gt_qG2I.y() = gt_state(2, 0);
+        gt_qG2I.z() = gt_state(3, 0);
+        gt_qG2I.w() = gt_state(4, 0);
+        Eigen::Quaterniond gt_qI2G = gt_qG2I.inverse();
+        Eigen::Vector3d gt_ypr = gt_qI2G.toRotationMatrix().eulerAngles(2, 0, 2);
+        gt_ypr *= 180.0 / M_PI;
+
+        Eigen::Quaterniond imu_qG2I;
+        imu_qG2I.x() = state_cur->imu()->quat()(0);
+        imu_qG2I.y() = state_cur->imu()->quat()(1);
+        imu_qG2I.z() = state_cur->imu()->quat()(2);
+        imu_qG2I.w() = state_cur->imu()->quat()(3);
+        Eigen::Quaterniond imu_qI2G = imu_qG2I.inverse();
+        Eigen::Vector3d imu_ypr = imu_qI2G.toRotationMatrix().eulerAngles(2, 0, 2);
+        imu_ypr *= 180.0 / M_PI;
+        std::cout << "gt_ypr: " << gt_ypr.transpose() << std::endl;
+        std::cout << "imu_ypr: " << imu_ypr.transpose() << std::endl;
+
+        Eigen::Vector3d gt_t;
+        gt_t(0) = gt_state(5, 0);
+        gt_t(1) = gt_state(6, 0);
+        gt_t(2) = gt_state(7, 0);
+//        static ros::Publisher
+    } else {
+        std::cout << "not get gt state at tm: " << state_cur->timestamp() << std::endl;
+    }
+}
