@@ -138,7 +138,7 @@ void RosVisualizer::visualize() {
         sim_save_total_state_to_file();
 
     // display statistics of states
-    pub_statistics();
+//    pub_statistics();
 }
 
 
@@ -257,28 +257,11 @@ void RosVisualizer::publish_state() {
     trans.stamp_ = ros::Time::now();
     trans.frame_id_ = "global";
     trans.child_frame_id_ = "imu";
-    tf::Quaternion quat(-state->imu()->quat()(0),-state->imu()->quat()(1),-state->imu()->quat()(2),state->imu()->quat()(3));
+    tf::Quaternion quat(state->imu()->quat()(0),state->imu()->quat()(1),state->imu()->quat()(2),state->imu()->quat()(3));
     trans.setRotation(quat);
     tf::Vector3 orig(state->imu()->pos()(0),state->imu()->pos()(1),state->imu()->pos()(2));
     trans.setOrigin(orig);
     mTfBr->sendTransform(trans);
-
-    tf::StampedTransform trans2;
-    trans2.stamp_ = ros::Time::now();
-    trans2.frame_id_ = "global";
-    trans2.child_frame_id_ = "global2";
-    Eigen::Matrix3d R;
-    R << 1, 0, 0, 0, 0, -1, 0, 1, 0;
-    std::cout << "global2 R: " << R << std::endl;
-    Eigen::Quaterniond global_q_inv(R);
-    Eigen::Quaterniond  global_q = global_q_inv.inverse();
-    std::cout << "global_q: " << global_q.x() << " " << global_q.y() << " " << global_q.z() << " " << global_q.w() << std::endl;
-    std::cout << "global_q_inv: " << global_q_inv.x() << " " << global_q_inv.y() << " " << global_q_inv.z() << " " << global_q_inv.w() << std::endl;
-    tf::Quaternion quat2(global_q.x(), global_q.y(), global_q.z(), global_q.w());
-    trans2.setRotation(quat2);
-    tf::Vector3 orig2(1.0, 0, 0);
-    trans2.setOrigin(orig2);
-    mTfBr->sendTransform(trans2);
 
     // Loop through each camera calibration and publish it
     for(const auto &calib : state->get_calib_IMUtoCAMs()) {

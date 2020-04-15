@@ -277,9 +277,6 @@ int main(int argc, char** argv)
             }
             // visualize
             viz->visualize();
-            if (sys->intialized()) {
-                viz->pub_pose_error(gt_states);
-            }
             // reset bools
             has_left = false;
             has_right = false;
