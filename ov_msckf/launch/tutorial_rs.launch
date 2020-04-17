@@ -9,7 +9,7 @@
 
         <!-- bag parameters -->
         <!-- <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/Tum/dataset-room1_512_16.bag" />-->
-        <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq2.bag" />
+        <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq1.bag" />
         <param name="bag_start"   type="int"    value="0" />
         <param name="bag_durr"    type="int"    value="-1" />
 
@@ -19,7 +19,7 @@
         <!-- world/filter parameters -->
         <param name="max_clones"             type="int"    value="11" />
         <param name="max_slam"               type="int"    value="30" />
-        <param name="max_cameras"            type="int"    value="1" />
+        <param name="max_cameras"            type="int"    value="2" />
         <param name="feat_representation"    type="string" value="ANCHORED_3D" />
         <param name="init_window_time"       type="double" value="0.5" />
         <param name="init_imu_thresh"        type="double" value="2.0" />
@@ -42,6 +42,8 @@
         <param name="accelerometer_random_walk"    type="double"   value="8.60000e-5" />
 
         <!-- camera intrinsics -->
+        <rosparam param="cam0_wh">[1280,1024]</rosparam>
+        <rosparam param="cam1_wh">[1280,1024]</rosparam>
         <param name="cam0_is_fisheye" type="bool" value="true" />
         <param name="cam1_is_fisheye" type="bool" value="true" />
         <rosparam param="cam0_k">[743.4286936207343, 743.5545205462922, 618.7186883884866, 506.7275058699658]</rosparam>

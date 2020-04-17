@@ -100,7 +100,7 @@ set(ov_msckf_src
         src/update/UpdaterHelper.cpp
         src/update/UpdaterMSCKF.cpp
         src/update/UpdaterSLAM.cpp
-        )
+        src/core/camera_model_utils.cpp src/core/camera_model_utils.h)
 set(ov_core_src
         ../ov_core/src/dummy.cpp
         ../ov_core/src/init/InertialInitializer.cpp

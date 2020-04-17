@@ -20,6 +20,7 @@
  */
 #include "VioManager.h"
 #include "types/Landmark.h"
+#include <opencv2/core/eigen.hpp>
 
 
 
@@ -181,12 +182,52 @@ VioManager::VioManager(ros::NodeHandle &nh) {
         camera_calib.insert({i,cam_calib});
         camera_wh.insert({i,wh});
 
+        // opencv stuff for rectify
+
+        camera_k_cv[i] = (cv::Mat_<double>(3, 3)
+            << matrix_k[0], 0, matrix_k[2],
+               0, matrix_k[1], matrix_k[3],
+               0, 0, 1);
+        camera_d_cv[i] = (cv::Mat_<double>(4, 1)
+            << matrix_d[0], matrix_d[1], matrix_d[2], matrix_d[3]);
+        camera_T[i] = T_CtoI;
+        std::cout << "camera " << i << "k: " << camera_k_cv[i] << "\n";
+        std::cout << "camera " << i << "d: " << camera_d_cv[i] << "\n";
+
         // Debug printing
         cout << "cam_" << i << "wh:" << endl << wh.first << " x " << wh.second << endl;
         cout << "cam_" << i << "K:" << endl << cam_calib.block(0,0,4,1).transpose() << endl;
         cout << "cam_" << i << "d:" << endl << cam_calib.block(4,0,4,1).transpose() << endl;
         cout << "T_C" << i << "toI:" << endl << T_CtoI << endl << endl;
 
+    }
+
+    if (state->options().num_cameras == 2) {
+        Eigen::Matrix3d R_IC0 = camera_T[0].block(0, 0, 3, 3);
+        Eigen::Vector3d t_IC0 = camera_T[0].block(0, 3, 3, 1);
+        Eigen::Matrix3d R_IC1 = camera_T[1].block(0, 0, 3, 3);
+        Eigen::Vector3d t_IC1 = camera_T[1].block(0, 3, 3, 1);
+        Eigen::Matrix3d R10 = R_IC1.transpose() * R_IC0;
+        Eigen::Vector3d t10 = R_IC1.transpose() * (t_IC0 - t_IC1);
+        cv::eigen2cv(R10, R10_cv);
+        cv::eigen2cv(t10, t10_cv);
+        cout << "\ncam10 R: " << R10_cv << "\nt: " << t10_cv << "\n";
+        cv::Size img_size0(camera_wh[0].first, camera_wh[0].second);
+        cv::Size img_size1(camera_wh[1].first, camera_wh[1].second);
+        if (camera_fisheye[0] && camera_fisheye[1]) {
+            RectifyFisheyeCameras(camera_k_cv[0], camera_d_cv[0], img_size0,
+                           camera_k_cv[1], camera_d_cv[1], img_size1, R10_cv, t10_cv,
+                           mapx_cam0, mapy_cam0, mapx_cam1, mapy_cam1);
+
+            rectify_done = true;
+        } else if (!camera_fisheye[0] && !camera_fisheye[1]) {
+            RectifyCameras(camera_k_cv[0], camera_d_cv[0], img_size0,
+                                  camera_k_cv[1], camera_d_cv[1], img_size1, R10_cv, t10_cv,
+                                  mapx_cam0, mapy_cam0, mapx_cam1, mapy_cam1);
+        }
+        img01_rectify.create(camera_wh[0].second, 2*camera_wh[0].first, CV_8UC1);
+        img0_rectify.create(camera_wh[0].second, camera_wh[0].first, CV_8UC1);
+        img1_rectify.create(camera_wh[1].second, camera_wh[1].first, CV_8UC1);
     }
 
     // Debug message
@@ -335,6 +376,49 @@ VioManager::VioManager(ros::NodeHandle &nh) {
 }
 
 
+void VioManager::RectifyCameras(const cv::Mat& k0, const cv::Mat& d0, const cv::Size& size0,
+                                       const cv::Mat& k1, const cv::Mat& d1, const cv::Size& size1,
+                                       const cv::Mat& R10, const cv::Mat& t10,
+                                       cv::Mat& mapx0, cv::Mat& mapy0, cv::Mat& mapx1, cv::Mat& mapy1) {
+    assert(size0.width == size1.width);
+    assert(size0.height == size1.height);
+    std::cout << "img0 w/h: " << size0.width << " / " << size0.height << "\n";
+    cv::Mat R0_rectify, R1_rectify, P0_rectify, P1_rectify, Q;
+    double focal0 = k0.at<double>(0, 0);
+    double focal1 = k0.at<double>(0, 0);
+    std::cout << "cam0 focal: " << focal0 << "\n";
+    std::cout << "cam1 focal: " << focal1 << "\n";
+    cv::Mat desired_k = (cv::Mat_<double>(3, 3) << (focal0+focal1)/2.0, 0.0, size0.width/2, 0.0, (focal0+focal1)/2.0, size0.height/2, 0.0, 0.0, 1.0);
+    cv::stereoRectify(desired_k, d0, desired_k, d1, size0, R10, t10, R0_rectify, R1_rectify, P0_rectify, P1_rectify, Q, cv::CALIB_ZERO_DISPARITY);
+    std::cout << "rectify result R0: " << R0_rectify << "\n";
+    std::cout << "rectify result R1: " << R1_rectify << "\n";
+    std::cout << "rectify result P0: " << P0_rectify << "\n";
+    std::cout << "rectify result P1: " << P1_rectify << "\n";
+    cv::initUndistortRectifyMap(k0, d0, R0_rectify, P0_rectify, size0, CV_32FC1, mapx0, mapy0);
+    cv::initUndistortRectifyMap(k1, d1, R1_rectify, P1_rectify, size1, CV_32FC1, mapx1, mapy1);
+}
+
+void VioManager::RectifyFisheyeCameras(const cv::Mat& k0, const cv::Mat& d0, const cv::Size& size0,
+                    const cv::Mat& k1, const cv::Mat& d1, const cv::Size& size1,
+                    const cv::Mat& R10, const cv::Mat& t10,
+                    cv::Mat& mapx0, cv::Mat& mapy0, cv::Mat& mapx1, cv::Mat& mapy1) {
+    assert(size0.width == size1.width);
+    assert(size0.height == size1.height);
+    std::cout << "fisheye img0 w/h: " << size0.width << " / " << size0.height << "\n";
+    cv::Mat R0_rectify, R1_rectify, P0_rectify, P1_rectify, Q;
+    double focal0 = k0.at<double>(0, 0);
+    double focal1 = k0.at<double>(0, 0);
+    std::cout << "fisheye cam0 focal: " << focal0 << "\n";
+    std::cout << "fisheye cam1 focal: " << focal1 << "\n";
+    cv::Mat desired_k = (cv::Mat_<double>(3, 3) << (focal0+focal1)/2.0, 0.0, size0.width/2, 0.0, (focal0+focal1)/2.0, size0.height/2, 0.0, 0.0, 1.0);
+    cv::fisheye::stereoRectify(desired_k, d0, desired_k, d1, size0, R10, t10, R0_rectify, R1_rectify, P0_rectify, P1_rectify, Q, cv::CALIB_ZERO_DISPARITY, cv::Size(), 0.0, 0.75);
+    std::cout << "fisheye rectify result R0: " << R0_rectify << "\n";
+    std::cout << "fisheye rectify result R1: " << R1_rectify << "\n";
+    std::cout << "fisheye rectify result P0: " << P0_rectify << "\n";
+    std::cout << "fisheye rectify result P1: " << P1_rectify << "\n";
+    cv::fisheye::initUndistortRectifyMap(k0, d0, R0_rectify, P0_rectify, size0, CV_32FC1, mapx0, mapy0);
+    cv::fisheye::initUndistortRectifyMap(k1, d1, R1_rectify, P1_rectify, size1, CV_32FC1, mapx1, mapy1);
+}
 
 
 void VioManager::feed_measurement_imu(double timestamp, Eigen::Vector3d wm, Eigen::Vector3d am) {

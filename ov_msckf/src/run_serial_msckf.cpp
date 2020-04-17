@@ -143,6 +143,9 @@ int main(int argc, char** argv)
 
   cv::namedWindow("left_image");
   cv::namedWindow("right_image");
+  cv::namedWindow("lr_rectify");
+    cv::namedWindow("left_rectify");
+    cv::namedWindow("right_rectify");
 
     // Step through the rosbag
     int msg_cnt = 0;
@@ -217,6 +220,7 @@ int main(int argc, char** argv)
             time1 = cv_ptr->header.stamp.toSec();
             cv::imshow("right_image", img1);
             cv::waitKey(10);
+//          std::cout << "image w/h: " << img1.cols << " / " << img1.rows << "\n";
 //            cv::waitKey(0);
 //            std::cout << std::setprecision(16);
 //            std::cout << "msg_cnt: " << msg_cnt << " right camera stamp: " << s1->header.stamp.toSec() << std::endl;
@@ -272,8 +276,19 @@ int main(int argc, char** argv)
             } else if(gt_states.empty() || sys->intialized()) {
                 // 每次都是处理上一帧
                 sys->feed_measurement_stereo(time_buffer, img0_buffer, img1_buffer, 0, 1);
-                std::cout << std::setprecision(16);
-                std::cout << "feed stereo image0/image1 tm: " << time << " / " << time1 << "\n";
+                std::cout << "img type: " << img0.type() << "\n";
+                cv::remap(img0_buffer, sys->img01_rectify(cv::Rect(0,0,img0_buffer.cols, img0_buffer.rows)), sys->mapx_cam0, sys->mapy_cam0, cv::INTER_CUBIC);
+                cv::remap(img1_buffer, sys->img01_rectify(cv::Rect(img0_buffer.cols,0,img1_buffer.cols, img1_buffer.rows)), sys->mapx_cam1, sys->mapy_cam1, cv::INTER_CUBIC);
+//                cv::remap(img0_buffer, left_rectify, sys->mapx_cam0, sys->mapy_cam0, cv::INTER_CUBIC);
+//                cv::remap(img1_buffer, right_rectify, sys->mapx_cam1, sys->mapy_cam1, cv::INTER_CUBIC);
+                cv::Mat lr_rectify;
+                lr_rectify.create(sys->img01_rectify.rows*2/3, sys->img01_rectify.cols*2/3, 0);
+                cv::resize(sys->img01_rectify, lr_rectify, cv::Size(lr_rectify.cols, lr_rectify.rows));
+                cv::imshow("lr_rectify", lr_rectify);
+//                cv::imwrite("/home/dji/Documents/rolling_shutter/tum_rs_rectify/lr_rectify_"+std::to_string(int64_t(time_buffer*1e6))+".png", lr_rectify);
+                std::cout << "img01 w/h: " << sys->img01_rectify.cols << " / " << sys->img01_rectify.rows << "\n";
+                std::cout << "img01_resize w/h: " << lr_rectify.cols << " / " << lr_rectify.rows << "\n";
+                cv::waitKey(10);
             }
             // visualize
             viz->visualize();

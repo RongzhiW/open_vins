@@ -41,6 +41,8 @@
         <param name="accelerometer_random_walk"    type="double"   value="3.0000e-3" />
 
         <!-- camera intrinsics -->
+        <rosparam param="cam0_wh">[752,480]</rosparam>
+        <rosparam param="cam1_wh">[752,480]</rosparam>
         <param name="cam0_is_fisheye" type="bool" value="false" />
         <param name="cam1_is_fisheye" type="bool" value="false" />
         <rosparam param="cam0_k">[458.654,457.296,367.215,248.375]</rosparam>
