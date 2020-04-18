@@ -88,6 +88,7 @@ namespace ov_core {
                 std::istringstream s(line);
                 std::string field;
                 Eigen::Matrix<double, 17, 1> temp;
+                temp.Zero();
                 // Loop through this line
                 while (getline(s, field, ',')) {
                     // Ensure we are in the range

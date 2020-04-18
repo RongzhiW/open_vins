@@ -141,11 +141,11 @@ int main(int argc, char** argv)
     //===================================================================================
     //===================================================================================
 
-  cv::namedWindow("left_image");
-  cv::namedWindow("right_image");
-  cv::namedWindow("lr_rectify");
-    cv::namedWindow("left_rectify");
-    cv::namedWindow("right_rectify");
+//    cv::namedWindow("left_image");
+//    cv::namedWindow("right_image");
+    cv::namedWindow("lr_rectify");
+//    cv::namedWindow("left_rectify");
+//    cv::namedWindow("right_rectify");
 
     // Step through the rosbag
     int msg_cnt = 0;
@@ -191,8 +191,8 @@ int main(int argc, char** argv)
             time = cv_ptr->header.stamp.toSec();
 //            img0 = img_left.clone();
 //            time = s0->header.stamp.toSec();
-            cv::imshow("left_image", img0);
-            cv::waitKey(10);
+//            cv::imshow("left_image", img0);
+//            cv::waitKey(10);
 //            std::cout << std::setprecision(16);
 //            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << s0->header.stamp.toSec() << std::endl;
         }
@@ -218,8 +218,8 @@ int main(int argc, char** argv)
             img1 = cv_ptr->image.clone();
 //            img1 = img_right.clone();
             time1 = cv_ptr->header.stamp.toSec();
-            cv::imshow("right_image", img1);
-            cv::waitKey(10);
+//            cv::imshow("right_image", img1);
+//            cv::waitKey(10);
 //          std::cout << "image w/h: " << img1.cols << " / " << img1.rows << "\n";
 //            cv::waitKey(0);
 //            std::cout << std::setprecision(16);
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
 //                cv::imwrite("/home/dji/Documents/rolling_shutter/tum_rs_rectify/lr_rectify_"+std::to_string(int64_t(time_buffer*1e6))+".png", lr_rectify);
                 std::cout << "img01 w/h: " << sys->img01_rectify.cols << " / " << sys->img01_rectify.rows << "\n";
                 std::cout << "img01_resize w/h: " << lr_rectify.cols << " / " << lr_rectify.rows << "\n";
-                cv::waitKey(10);
+                cv::waitKey(1);
             }
             // visualize
             viz->visualize();

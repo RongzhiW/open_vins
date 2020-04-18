@@ -9,17 +9,18 @@
 
         <!-- bag parameters -->
         <!-- <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/Tum/dataset-room1_512_16.bag" />-->
-        <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq1.bag" />
+        <param name="path_bag"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq1.bag" />
         <param name="bag_start"   type="int"    value="0" />
         <param name="bag_durr"    type="int"    value="-1" />
 
         <!-- ground truth -->
-        <param name="path_gthaha"    type="string" value="/home/dji/Documents/datasets/EucRoc/V2_01_easy/mav0/state_groundtruth_estimate0/data.csv" />
+<!--        <param name="path_gthaha"    type="string" value="/home/tianu/Documents/datasets/EucRoc/V2_01_easy/mav0/state_groundtruth_estimate0/data.csv" />-->
+        <param name="path_gt"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/exported/dataset-seq1/dataset-seq1/mav0/mocap0/data.csv" />
 
         <!-- world/filter parameters -->
         <param name="max_clones"             type="int"    value="11" />
         <param name="max_slam"               type="int"    value="30" />
-        <param name="max_cameras"            type="int"    value="2" />
+        <param name="max_cameras"            type="int"    value="1" />
         <param name="feat_representation"    type="string" value="ANCHORED_3D" />
         <param name="init_window_time"       type="double" value="0.5" />
         <param name="init_imu_thresh"        type="double" value="2.0" />

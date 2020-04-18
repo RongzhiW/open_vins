@@ -8,12 +8,12 @@
         <param name="topic_camera1"  type="string" value="/cam1/image_raw" />
 
         <!-- bag parameters -->
-        <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/EucRoc/V2_01_easy.bag" />
+        <param name="path_bag"    type="string" value="/home/tianu/Documents/datasets/EucRoc/V2_01_easy.bag" />
         <param name="bag_start"   type="int"    value="0" />
         <param name="bag_durr"    type="int"    value="-1" />
 
         <!-- ground truth -->
-        <param name="path_gthaha"    type="string" value="/home/dji/Documents/datasets/EucRoc/V2_01_easy/mav0/state_groundtruth_estimate0/data.csv" />
+        <param name="path_gthaha"    type="string" value="/home/tianu/Documents/datasets/EucRoc/V2_01_easy/mav0/state_groundtruth_estimate0/data.csv" />
 
         <!-- world/filter parameters -->
         <param name="max_clones"             type="int"    value="11" />
