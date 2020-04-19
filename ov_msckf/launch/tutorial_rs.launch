@@ -9,13 +9,13 @@
 
         <!-- bag parameters -->
         <!-- <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/Tum/dataset-room1_512_16.bag" />-->
-        <param name="path_bag"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq1.bag" />
+        <param name="path_bag"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq2.bag" />
         <param name="bag_start"   type="int"    value="0" />
         <param name="bag_durr"    type="int"    value="-1" />
 
         <!-- ground truth -->
 <!--        <param name="path_gthaha"    type="string" value="/home/tianu/Documents/datasets/EucRoc/V2_01_easy/mav0/state_groundtruth_estimate0/data.csv" />-->
-        <param name="path_gt"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/exported/dataset-seq1/dataset-seq1/mav0/mocap0/data.csv" />
+        <param name="path_gt"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/exported/dataset-seq2/mav0/mocap0/data.csv" />
 
         <!-- world/filter parameters -->
         <param name="max_clones"             type="int"    value="11" />
