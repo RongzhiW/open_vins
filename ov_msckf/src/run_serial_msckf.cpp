@@ -147,7 +147,6 @@ int main(int argc, char** argv)
 //    cv::namedWindow("left_rectify");
 //    cv::namedWindow("right_rectify");
 
-    double td = 0.025;
     // Step through the rosbag
     int msg_cnt = 0;
     for (const rosbag::MessageInstance& m : view) {
@@ -255,6 +254,9 @@ int main(int argc, char** argv)
                 sys->initialize_with_gt(imustate);
             } else if(gt_states.empty() || sys->intialized()) {
                 sys->feed_measurement_monocular(time_buffer, img0_buffer, 0);
+//                std::cout << std::setprecision(16);
+//                std::cout << "mono camera stamp: " << time_buffer << std::endl;
+
             }
             // visualize
             viz->visualize();

@@ -19,7 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "Propagator.h"
-
+#include "utils/tic_toc.h"
 
 
 using namespace ov_core;
@@ -28,7 +28,7 @@ using namespace ov_msckf;
 
 
 
-void Propagator::propagate_and_clone(State* state, double timestamp) {
+void Propagator::propagate_and_clone(State* state, double timestamp, const RsPropOption rs_prop_option) {
 
     // If the difference between the current update time and state is zero
     // We should crash, as this means we would have two clones at the same time!!!!
@@ -63,7 +63,22 @@ void Propagator::propagate_and_clone(State* state, double timestamp) {
     // 第一帧时state->timestamp()是imu的时间戳, 不应该加offset?
     double time0 = state->timestamp()+last_prop_time_offset;
     double time1 = timestamp+t_off_new;
-    vector<IMUDATA> prop_data = Propagator::select_imu_readings(imu_data,time0,time1);
+//    vector<IMUDATA> prop_data = Propagator::select_imu_readings(imu_data,time0,time1);
+//    std::cout << "prop_data size: " << prop_data.size() << "\n";
+
+    TicToc cost("rs_imus");
+    vector<IMUDATA> prop_data;
+    Propagator::select_imu_readings(imu_data, time0, time1, prop_data);
+//    std::cout << "new prop_data size: " << prop_data.size() << "\n";
+    vector<IMUDATA> rs_imus;
+    Propagator::generate_rs_imus(imu_data, time1, rs_prop_option.rs_tr_row, rs_prop_option.image_height, rs_imus);
+    std::cout << "cost of generating rs_imu: " << cost.toc() << "\n";
+//    for (auto data : prop_data) {
+//        std::cout << "prop_data am: " << data.am.transpose() << "\n";
+//    }
+//    for (auto data : rs_imus) {
+//        std::cout << "rs_imus am: " << data.am.transpose() << "\n";
+//    }
 
     // We are going to sum up all the state transition matrices, so we can do a single large multiplication at the end
     // Phi_summed = Phi_i*Phi_summed
@@ -120,6 +135,93 @@ void Propagator::propagate_and_clone(State* state, double timestamp) {
 
 }
 
+void Propagator::generate_rs_imus(const std::vector<IMUDATA>& imu_data, const double t0, const double tr_row,
+                             const int img_height, std::vector<IMUDATA>& rs_imus) {
+    rs_imus.clear();
+    if (imu_data.empty() || imu_data.size() <= 1) {
+       std::cerr << "No imu measurement for rs_imus\n";
+       std::cerr << __FILE__ << " on line " << __LINE__ << std::endl;
+       return;
+    }
+    int raw_imu_idx = -1;
+    for (int i = 0; i < imu_data.size() - 1; i++) {
+        if (t0 < imu_data[i+1].timestamp && t0 >= imu_data[i].timestamp) {
+           raw_imu_idx = i;
+            break;
+        }
+    }
+    if (raw_imu_idx < 0 && t0 >= imu_data[imu_data.size() - 1].timestamp) {
+        raw_imu_idx = imu_data.size() - 1;
+        std::cerr << "No imu measurements in rs_tr_duration, t0 is too new\n";
+        assert(false);
+    }
+    if (raw_imu_idx < 0) {
+        std::cerr << "No imu measurements in rs_tr_duration, t0 is too old\n";
+        assert(false);
+    }
+    for (int row = 0; row < img_height; row++) {
+        double row_tm = t0 + row * tr_row;
+        if (raw_imu_idx < (imu_data.size() - 1) && row_tm >= imu_data[raw_imu_idx + 1].timestamp) {
+            raw_imu_idx++;
+        }
+        IMUDATA data;
+        if (raw_imu_idx < 0) {
+           data = interpolate_data(imu_data[raw_imu_idx+1], imu_data[raw_imu_idx+2], row_tm);
+           std::cerr << "Interpolate rs_imus before imu_data[0]\n";
+        } else if (raw_imu_idx < (imu_data.size() - 1)) {
+            data = interpolate_data(imu_data[raw_imu_idx], imu_data[raw_imu_idx+1], row_tm);
+        } else if (raw_imu_idx == imu_data.size() - 1) {
+           data = interpolate_data(imu_data[raw_imu_idx-1], imu_data[raw_imu_idx], row_tm);
+            std::cerr << "Interpolate rs_imus after imu_data[size-1]\n";
+        } else {
+            assert(false);
+        }
+        rs_imus.push_back(data);
+    }
+    assert(rs_imus.size() == img_height);
+}
+
+void Propagator::select_imu_readings(const std::vector<IMUDATA>& imu_data, const double time0, const double time1, std::vector<IMUDATA> &prop_data) {
+    assert(time0 <= time1);
+    prop_data.clear();
+    if (imu_data.empty()) {
+        std::cerr << "Propagator::select_imu_readings(): There are no IMU measurements!!!!!" << std::endl;
+        std::cerr << "Propagator::select_imu_readings(): IMU-CAMERA are likely messed up, check time offset value!!!" << std::endl;
+        std::cerr << __FILE__ << " on line " << __LINE__ << std::endl;
+        return;
+    }
+    int first_imu = imu_data.size();
+    int last_imu = -1;
+    // push first null IMUDATA
+    prop_data.push_back(IMUDATA());
+    for (int i = 0; i < imu_data.size(); i++) {
+        if (imu_data[i].timestamp < time1 && imu_data[i].timestamp > time0) {
+            prop_data.push_back(imu_data[i]);
+            if (i < first_imu) first_imu = i;
+            if (i > last_imu) last_imu = i;
+        }
+    }
+    if (first_imu == imu_data.size()) {
+        std::cerr << "No imu measurements between " << time0 << " - " << time1 << "\n";
+        std::cerr << __FILE__ << " on line " << __LINE__ << std::endl;
+        return;
+    }
+    // 补充第一个imu_data
+    if (first_imu > 0) {
+        IMUDATA data = interpolate_data(imu_data[first_imu - 1], imu_data[first_imu], time0);
+        prop_data[0] = data;
+    } else if (first_imu == 0) {
+        prop_data[0] = imu_data[first_imu];
+    }
+    // 补充最后一个imu_data
+    if (last_imu < (imu_data.size() - 1)) {
+        IMUDATA data = interpolate_data(imu_data[last_imu], imu_data[last_imu + 1], time1);
+        prop_data.push_back(data);
+    } else if (last_imu == (imu_data.size() - 1)) {
+        prop_data.push_back(imu_data[imu_data.size() - 1]);
+    }
+
+}
 
 std::vector<Propagator::IMUDATA> Propagator::select_imu_readings(const std::vector<IMUDATA>& imu_data, double time0, double time1) {
 

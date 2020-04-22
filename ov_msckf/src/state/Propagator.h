@@ -91,6 +91,12 @@ namespace ov_msckf {
 
         };
 
+      struct RsPropOption{
+        int image_height;
+        double rs_tr_row;
+        double rs_td;
+      };
+
 
         /**
          * @brief Default constructor
@@ -138,7 +144,7 @@ namespace ov_msckf {
          * @param state Pointer to state
          * @param timestamp Time to propagate to and clone at
          */
-        void propagate_and_clone(State *state, double timestamp);
+        void propagate_and_clone(State *state, double timestamp, const RsPropOption rs_prop_option);
 
 
         /**
@@ -154,6 +160,9 @@ namespace ov_msckf {
          * @return Vector of measurements (if we could compute them)
          */
         static std::vector<IMUDATA> select_imu_readings(const std::vector<IMUDATA>& imu_data, double time0, double time1);
+        static void select_imu_readings(const std::vector<IMUDATA>& imu_data, const double time0, const double time1, std::vector<IMUDATA> &prop_data);
+        static void generate_rs_imus(const std::vector<IMUDATA>& imu_data, const double t0, const double tr_row,
+                                     const int img_height, std::vector<IMUDATA>& rs_imus);
 
         /**
          * @brief Nice helper function that will linearly interpolate between two imu messages.

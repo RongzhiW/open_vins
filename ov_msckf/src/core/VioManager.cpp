@@ -229,7 +229,14 @@ VioManager::VioManager(ros::NodeHandle &nh) {
         img0_rectify.create(camera_wh[0].second, camera_wh[0].first, CV_8UC1);
         img1_rectify.create(camera_wh[1].second, camera_wh[1].first, CV_8UC1);
     }
-
+    // rolling shutter related
+    nh.param<bool>("rs_enabled", rs_enabled, false);
+    nh.param<double>("rs_row_tr_us", rs_row_tr, false);
+    rs_row_tr *= 1e-6;
+    rs_tr = rs_row_tr * camera_wh[0].second;
+    ROS_INFO("rs_enabled: %d", rs_enabled);
+    ROS_INFO("rs_row_tr: %f", rs_row_tr);
+    ROS_INFO("rs_tr: %f", rs_tr);
     // Debug message
     ROS_INFO("=====================================");
 
@@ -620,7 +627,7 @@ void VioManager::do_feature_propagate_update(double timestamp) {
 
     // Propagate the state forward to the current update time
     // Also augment it with a new clone!
-    propagator->propagate_and_clone(state, timestamp);
+    propagator->propagate_and_clone(state, timestamp, {camera_wh[0].second, rs_row_tr, 0.0});
     rT3 =  boost::posix_time::microsec_clock::local_time();
 
     // If we have not reached max clones, we should just return...
