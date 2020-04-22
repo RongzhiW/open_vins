@@ -91,10 +91,18 @@ namespace ov_msckf {
 
         };
 
-      struct RsPropOption{
+        // rolling shutter related
+      struct RsPropOption {
         int image_height;
         double rs_tr_row;
         double rs_td;
+      };
+      struct RsImuState {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        Eigen::Matrix<double, 3, 1> p, v;
+        Eigen::Matrix<double, 4, 1> q;
+        Eigen::MatrixXd cov;
+        Eigen::Matrix<double, 3, 1> ba, bg;
       };
 
 
@@ -210,6 +218,7 @@ namespace ov_msckf {
          */
         void predict_and_compute(State *state, const IMUDATA data_minus, const IMUDATA data_plus,
                                  Eigen::Matrix<double, 15, 15> &F, Eigen::Matrix<double, 15, 15> &Qd);
+        void propogate_rs_imus(const RsImuState& state0, const std::vector<IMUDATA>& rs_imus, std::vector<RsImuState>& rs_imus_state);
 
         /**
          * @brief Discrete imu mean propagation.

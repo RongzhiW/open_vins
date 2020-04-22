@@ -334,6 +334,41 @@ std::vector<Propagator::IMUDATA> Propagator::select_imu_readings(const std::vect
 
 }
 
+void Propagator::propogate_rs_imus(const RsImuState& state0, const std::vector<IMUDATA>& rs_imus, std::vector<RsImuState>& rs_imus_state) {
+    if (rs_imus.empty()) {
+        std::cerr << "No rs_imus when propagating\n";
+        return;
+    }
+    rs_imus_state.resize(rs_imus.size());
+    rs_imus_state[0] = state0;
+    for (int i = 0; i < rs_imus.size() - 1; i++) {
+        const RsImuState& cur_state = rs_imus_state[0];
+        double dt = rs_imus[i+1].timestamp - rs_imus[i].timestamp;
+        assert(dt >= 0);
+        Eigen::Matrix<double, 3, 1> w_hat1 = rs_imus[i].wm - state0.bg;
+        Eigen::Matrix<double, 3, 1> a_hat1 = rs_imus[i].am - state0.ba;
+        Eigen::Matrix<double, 3, 1> w_hat2 = rs_imus[i+1].wm - state0.bg;
+        Eigen::Matrix<double, 3, 1> a_hat2 = rs_imus[i+1].am - state0.ba;
+        // 计算积分
+        Eigen::Vector3d w_hat = 0.5 * (w_hat1 + w_hat2);
+        Eigen::Vector3d a_hat = 0.5 * (a_hat1 + a_hat2);
+        double w_norm = w_hat.norm();
+        Eigen::Matrix<double, 4, 4> I_4x4 = Eigen::Matrix<double, 4, 4>::Identity();
+        Eigen::Matrix<double, 3, 3> R_Gtoi = quat_2_Rot(cur_state.q);
+
+        // Orientation: Equation (101) and (103) and of Trawny indirect TR
+        Eigen::Matrix<double,4,4> bigO;
+        if(w_norm > 1e-20) {
+            bigO = cos(0.5*w_norm*dt)*I_4x4 + 1/w_norm*sin(0.5*w_norm*dt)*Omega(w_hat);
+        } else {
+            bigO = I_4x4 + 0.5*dt*Omega(w_hat);
+        }
+        RsImuState nxt_state;
+        nxt_state.q = quatnorm(bigO*cur_state.q);
+        nxt_state.v = cur_state.v + R_Gtoi.transpose()*a_hat*dt*dt - 0.5*_gravity*dt*dt;
+        rs_imus_state[i+1] = nxt_state;
+    }
+}
 
 void Propagator::predict_and_compute(State *state, const IMUDATA data_minus, const IMUDATA data_plus,
                                      Eigen::Matrix<double,15,15> &F, Eigen::Matrix<double,15,15> &Qd) {
