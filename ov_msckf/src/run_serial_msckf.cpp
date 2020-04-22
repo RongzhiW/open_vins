@@ -147,6 +147,7 @@ int main(int argc, char** argv)
 //    cv::namedWindow("left_rectify");
 //    cv::namedWindow("right_rectify");
 
+    double td = 0.025;
     // Step through the rosbag
     int msg_cnt = 0;
     for (const rosbag::MessageInstance& m : view) {
@@ -168,7 +169,7 @@ int main(int argc, char** argv)
             // imu 数据塞到buffer里
             sys->feed_measurement_imu(timem, wm, am);
 //            std::cout << std::setprecision(16);
-//            std::cout << "msg_cnt: " << msg_cnt << " imu stamp: " << (*s2).header.stamp.toSec() << std::endl;
+//            std::cout << "msg_cnt: " << msg_cnt << " imu stamp: " << (*s2).header.stamp.toSec()*1e3 << std::endl;
 //            std:cout << "am: " << am.transpose() << "\n";
 //            std::cout << "wm: " << wm.transpose() << "\n";
         }
@@ -194,7 +195,7 @@ int main(int argc, char** argv)
 //            cv::imshow("left_image", img0);
 //            cv::waitKey(10);
 //            std::cout << std::setprecision(16);
-//            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << s0->header.stamp.toSec() << std::endl;
+//            std::cout << "msg_cnt: " << msg_cnt << " left camera stamp: " << s0->header.stamp.toSec()*1e3 << std::endl;
         }
 
         // Handle RIGHT camera
@@ -223,7 +224,7 @@ int main(int argc, char** argv)
 //          std::cout << "image w/h: " << img1.cols << " / " << img1.rows << "\n";
 //            cv::waitKey(0);
 //            std::cout << std::setprecision(16);
-//            std::cout << "msg_cnt: " << msg_cnt << " right camera stamp: " << s1->header.stamp.toSec() << std::endl;
+//            std::cout << "msg_cnt: " << msg_cnt << " right camera stamp: " << s1->header.stamp.toSec()*1e3 << std::endl;
             //}
         }
         msg_cnt++;
