@@ -272,30 +272,32 @@ namespace ov_msckf {
         std::map<size_t,std::pair<int,int>> camera_wh;
 
      public:
-      // opencv stuff for rectify
-      std::map<size_t, cv::Mat> camera_k_cv;
-      std::map<size_t, cv::Mat> camera_d_cv;
-      std::map<size_t, Eigen::Matrix4d> camera_T;
-      cv::Mat R10_cv, t10_cv;
-      cv::Mat R0_rectify, R1_rectify;
-      cv::Mat mapx_cam0, mapy_cam0;
-      cv::Mat mapx_cam1, mapy_cam1;
-      bool rectify_done = false;
-      cv::Mat img01_rectify;
-      cv::Mat img0_rectify;
-      cv::Mat img1_rectify;
-      // rolling shutter related
-      bool rs_enabled;
-      double rs_row_tr, rs_tr;
+        // opencv stuff for rectify
+        std::map<size_t, cv::Mat> camera_k_cv;
+        std::map<size_t, cv::Mat> camera_d_cv;
+        std::map<size_t, Eigen::Matrix4d> camera_T;
+        cv::Mat R10_cv, t10_cv;
+        cv::Mat R0_rectify, R1_rectify;
+        cv::Mat mapx_cam0, mapy_cam0;
+        cv::Mat mapx_cam1, mapy_cam1;
+        bool rectify_done = false;
+        cv::Mat img01_rectify;
+        cv::Mat img0_rectify;
+        cv::Mat img1_rectify;
+        // rolling shutter related
+        bool rs_enabled;
+        double rs_row_tr, rs_tr;
+        Propagator::RsPreintegState a;
+        std::map<double, std::vector<Propagator::RsPreintegState>> clone_rs_preintegs;
 
-      void RectifyFisheyeCameras(const cv::Mat& k0, const cv::Mat& d0, const cv::Size& size0,
+        void RectifyFisheyeCameras(const cv::Mat& k0, const cv::Mat& d0, const cv::Size& size0,
+                                   const cv::Mat& k1, const cv::Mat& d1, const cv::Size& size1,
+                                   const cv::Mat& R10, const cv::Mat& t10,
+                                   cv::Mat& mapx0, cv::Mat& mapy0, cv::Mat& mapx1, cv::Mat& mapy1);
+        void RectifyCameras(const cv::Mat& k0, const cv::Mat& d0, const cv::Size& size0,
                             const cv::Mat& k1, const cv::Mat& d1, const cv::Size& size1,
                             const cv::Mat& R10, const cv::Mat& t10,
                             cv::Mat& mapx0, cv::Mat& mapy0, cv::Mat& mapx1, cv::Mat& mapy1);
-      void RectifyCameras(const cv::Mat& k0, const cv::Mat& d0, const cv::Size& size0,
-                                 const cv::Mat& k1, const cv::Mat& d1, const cv::Size& size1,
-                                 const cv::Mat& R10, const cv::Mat& t10,
-                                 cv::Mat& mapx0, cv::Mat& mapy0, cv::Mat& mapx1, cv::Mat& mapy1);
 
     };
 

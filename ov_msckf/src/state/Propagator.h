@@ -97,6 +97,23 @@ namespace ov_msckf {
             double rs_tr_row;
             double rs_td;
         };
+        struct RsPreintegState {
+          public:
+            RsPreintegState() {
+                delta_p.setZero();
+                delta_v.setZero();
+                delta_q = Eigen::Matrix<double, 4, 1>{0,0,0,1};
+                ba.setZero();
+                bg.setZero();
+                cov.setIdentity();
+            }
+            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+            double timestamp;
+            Eigen::Matrix<double, 3, 1> delta_p, delta_v;
+            Eigen::Matrix<double, 4, 1> delta_q;
+            Eigen::Matrix<double, 3, 1> ba, bg;
+            Eigen::MatrixXd cov;
+        };
         struct RsImuState {
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             double timestamp;
@@ -105,6 +122,13 @@ namespace ov_msckf {
             Eigen::Matrix<double, 3, 1> ba, bg;
             Eigen::MatrixXd cov;
         };
+
+        std::vector<RsImuState> rs_imu_states;
+        std::vector<RsPreintegState> rs_preinteg_states;
+        std::vector<IMUDATA> rs_imus;
+        std::vector<RsPreintegState> get_rs_preinteg_states() {
+            return rs_preinteg_states;
+        }
 
 
         /**
@@ -220,6 +244,8 @@ namespace ov_msckf {
         void predict_and_compute(State *state, const IMUDATA data_minus, const IMUDATA data_plus,
                                  Eigen::Matrix<double, 15, 15> &F, Eigen::Matrix<double, 15, 15> &Qd);
         void propogate_rs_imus(const RsImuState& state0, const std::vector<IMUDATA>& rs_imus, std::vector<RsImuState>& rs_imu_states);
+        void preinteg_rs_imus(const Eigen::Vector3d& ba, const Eigen::Vector3d& bg, const std::vector<IMUDATA>& rs_imus, std::vector<RsPreintegState>& rs_preinteg_states);
+        void update_rs_imu_propogation(const RsImuState& state0, const std::vector<RsPreintegState>& rs_preinteg_states, std::vector<RsImuState>& rs_imu_states);
 
         /**
          * @brief Discrete imu mean propagation.

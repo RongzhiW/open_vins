@@ -195,6 +195,7 @@ namespace ov_msckf {
 
         /// Map between imaging times and clone poses (q_GtoIi, p_IiinG)
         std::map<double, PoseJPL*> _clones_IMU;
+        std::map<double, Vec*> _clones_vel;
 
         /// Our current set of SLAM features (3d positions)
         std::unordered_map<size_t, Landmark*> _features_SLAM;
