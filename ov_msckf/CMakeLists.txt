@@ -114,7 +114,7 @@ set(ov_core_src
         ../ov_core/src/types/Landmark.cpp
         ../ov_core/src/feat/Feature.cpp
         ../ov_core/src/feat/FeatureInitializer.cpp
-        src/utils/tic_toc.h)
+        src/utils/tic_toc.h src/core/rs_imp.h)
 
 
 ##################################################

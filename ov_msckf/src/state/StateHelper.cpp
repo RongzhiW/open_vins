@@ -464,6 +464,7 @@ void StateHelper::augment_clone(State *state, Eigen::Matrix<double, 3, 1> last_w
 
     // Append the new clone to our clone vector
     state->insert_clone(state->timestamp(), pose);
+    state->insert_clone_vel(state->timestamp(), dynamic_cast<Vec*>(imu->v()->clone()));
 
     // If we are doing time calibration, then our clones are a function of the time offset
     // Logic is based on Mingyang Li and Anastasios I. Mourikis paper:

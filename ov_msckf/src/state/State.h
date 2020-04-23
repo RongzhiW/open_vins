@@ -31,6 +31,7 @@
 #include "types/PoseJPL.h"
 #include "types/Landmark.h"
 #include "StateOptions.h"
+#include "core/rs_imp.h"
 
 using namespace ov_core;
 
@@ -142,6 +143,12 @@ namespace ov_msckf {
         std::map<double, PoseJPL*> get_clones() {
             return _clones_IMU;
         }
+        std::map<double, Vec*> get_clones_vel() {
+            return _clones_vel;
+        }
+        std::map<double, std::vector<RsImuState>>& get_clone_rs_imu_states() {
+            return _clones_rs_imu_states;
+        };
 
         /// Get current number of clones
         size_t n_clones() {
@@ -196,6 +203,7 @@ namespace ov_msckf {
         /// Map between imaging times and clone poses (q_GtoIi, p_IiinG)
         std::map<double, PoseJPL*> _clones_IMU;
         std::map<double, Vec*> _clones_vel;
+        std::map<double, std::vector<RsImuState>> _clones_rs_imu_states;
 
         /// Our current set of SLAM features (3d positions)
         std::unordered_map<size_t, Landmark*> _features_SLAM;
@@ -229,6 +237,9 @@ namespace ov_msckf {
         /// Insert a new clone specified by its timestep and type
         void insert_clone(double timestamp, PoseJPL *pose) {
             _clones_IMU.insert({timestamp, pose});
+        }
+        void insert_clone_vel(double timestamp, Vec *vel) {
+            _clones_vel.insert({timestamp, vel});
         }
 
         /// Removes a clone from a specific timestep

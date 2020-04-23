@@ -605,6 +605,41 @@ bool VioManager::try_to_initialize() {
 }
 
 
+void VioManager::update_clones_rs_states(State* state) {
+    const std::map<double, PoseJPL*>& clones_imu = state->get_clones();
+    const std::map<double, Vec*>& clones_vel = state->get_clones_vel();
+    std::map<double, std::vector<RsImuState>>& clones_rs_imu_states = state->get_clone_rs_imu_states();
+    for (auto& clone : clones_imu) {
+        double timestamp = clone.first;
+        assert(clones_vel.find(timestamp) != clones_vel.end());
+        assert(clone_rs_preintegs.find(timestamp) != clone_rs_preintegs.end());
+        const std::vector<RsPreintegState>& rs_preintegs = clone_rs_preintegs[timestamp];
+        assert(rs_preintegs.size() == camera_wh[0].second);
+        RsImuState state0;
+        state0.timestamp = timestamp;
+        state0.p = clone.second->pos();
+        state0.q = clone.second->quat();
+        state0.v = clones_vel.at(timestamp)->value();
+        state0.ba = state->imu()->bias_a();
+        state0.bg = state->imu()->bias_g();
+        std::vector<RsImuState> rs_imu_states;
+        propagator->update_rs_imu_propogation(state0, rs_preintegs, rs_imu_states);
+        clones_rs_imu_states[timestamp] = rs_imu_states;
+        assert(rs_imu_states.size() == camera_wh[0].second);
+    }
+    // test
+//    std::vector<RsImuState>& newest_clone_rs_imu_states = clones_rs_imu_states[state->timestamp()];
+//    for (int i = 0; i < newest_clone_rs_imu_states.size(); i++) {
+//        const RsImuState& rs_imu_state_new = newest_clone_rs_imu_states[i];
+//        std::cout << std::setprecision(16);
+//        std::cout << i << " newest_clone_rs_imu_state stamp(us): " << rs_imu_state_new.timestamp*1e6 << "\nnew_rs_imu prop q: " << rs_imu_state_new.q.transpose() << "\n";
+//        std::cout << i << " newest_clone_rs_imu prop p: " << rs_imu_state_new.p.transpose() << "\n";
+//        std::cout << i << " newest_clone_rs_imu prop v: " << rs_imu_state_new.v.transpose() << "\n";
+//        std::cout << i << " newest_clone_rs_imu prop ba: " << rs_imu_state_new.ba.transpose() << "\n";
+//        std::cout << i << " newest_clone_rs_imu prop bg: " << rs_imu_state_new.bg.transpose() << "\n";
+//    }
+
+}
 
 void VioManager::do_feature_propagate_update(double timestamp) {
 
@@ -628,6 +663,7 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     // Propagate the state forward to the current update time
     // Also augment it with a new clone!
     propagator->propagate_and_clone(state, timestamp, {camera_wh[0].second, rs_row_tr, 0.0});
+    clone_rs_preintegs[timestamp] = propagator->get_rs_preinteg_states();
     rT3 =  boost::posix_time::microsec_clock::local_time();
 
     // If we have not reached max clones, we should just return...
@@ -644,6 +680,9 @@ void VioManager::do_feature_propagate_update(double timestamp) {
         ROS_ERROR("[PROP]: It has been %.3f since last time we propagated",timestamp-state->timestamp());
         return;
     }
+
+    // 更新rs在每帧每行对应的位姿
+    update_clones_rs_states(state);
 
     //===================================================================================
     // MSCKF features and KLT tracks that are SLAM features

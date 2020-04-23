@@ -25,6 +25,7 @@
 #include "state/StateHelper.h"
 #include "utils/quat_ops.h"
 #include <ros/ros.h>
+#include "core/rs_imp.h"
 
 using namespace ov_core;
 
@@ -92,37 +93,6 @@ namespace ov_msckf {
         };
 
         // rolling shutter related
-        struct RsPropOption {
-            int image_height;
-            double rs_tr_row;
-            double rs_td;
-        };
-        struct RsPreintegState {
-          public:
-            RsPreintegState() {
-                delta_p.setZero();
-                delta_v.setZero();
-                delta_q = Eigen::Matrix<double, 4, 1>{0,0,0,1};
-                ba.setZero();
-                bg.setZero();
-                cov.setIdentity();
-            }
-            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-            double timestamp;
-            Eigen::Matrix<double, 3, 1> delta_p, delta_v;
-            Eigen::Matrix<double, 4, 1> delta_q;
-            Eigen::Matrix<double, 3, 1> ba, bg;
-            Eigen::MatrixXd cov;
-        };
-        struct RsImuState {
-            EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-            double timestamp;
-            Eigen::Matrix<double, 3, 1> p, v;
-            Eigen::Matrix<double, 4, 1> q;
-            Eigen::Matrix<double, 3, 1> ba, bg;
-            Eigen::MatrixXd cov;
-        };
-
         std::vector<RsImuState> rs_imu_states;
         std::vector<RsPreintegState> rs_preinteg_states;
         std::vector<IMUDATA> rs_imus;
@@ -196,6 +166,7 @@ namespace ov_msckf {
         static void select_imu_readings(const std::vector<IMUDATA>& imu_data, const double time0, const double time1, std::vector<IMUDATA> &prop_data);
         static void generate_rs_imus(const std::vector<IMUDATA>& imu_data, const double t0, const double tr_row,
                                      const int img_height, std::vector<IMUDATA>& rs_imus);
+        void update_rs_imu_propogation(const RsImuState& state0, const std::vector<RsPreintegState>& rs_preinteg_states, std::vector<RsImuState>& rs_imu_states);
 
         /**
          * @brief Nice helper function that will linearly interpolate between two imu messages.
@@ -245,7 +216,6 @@ namespace ov_msckf {
                                  Eigen::Matrix<double, 15, 15> &F, Eigen::Matrix<double, 15, 15> &Qd);
         void propogate_rs_imus(const RsImuState& state0, const std::vector<IMUDATA>& rs_imus, std::vector<RsImuState>& rs_imu_states);
         void preinteg_rs_imus(const Eigen::Vector3d& ba, const Eigen::Vector3d& bg, const std::vector<IMUDATA>& rs_imus, std::vector<RsPreintegState>& rs_preinteg_states);
-        void update_rs_imu_propogation(const RsImuState& state0, const std::vector<RsPreintegState>& rs_preinteg_states, std::vector<RsImuState>& rs_imu_states);
 
         /**
          * @brief Discrete imu mean propagation.
