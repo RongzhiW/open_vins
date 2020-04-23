@@ -71,7 +71,16 @@ void Propagator::propagate_and_clone(State* state, double timestamp, const RsPro
     Propagator::select_imu_readings(imu_data, time0, time1, prop_data);
 //    std::cout << "new prop_data size: " << prop_data.size() << "\n";
     vector<IMUDATA> rs_imus;
-    Propagator::generate_rs_imus(imu_data, time1, rs_prop_option.rs_tr_row, rs_prop_option.image_height, rs_imus);
+    Propagator::generate_rs_imus(imu_data, time0, rs_prop_option.rs_tr_row, rs_prop_option.image_height, rs_imus);
+    // propogate rs_imus
+    RsImuState rs_imu_state0;
+    rs_imu_state0.timestamp = state->timestamp();
+    rs_imu_state0.p = state->imu()->pos();
+    rs_imu_state0.q = state->imu()->quat();
+    rs_imu_state0.v = state->imu()->vel();
+    rs_imu_state0.ba = state->imu()->bias_a();
+    rs_imu_state0.bg = state->imu()->bias_g();
+//    rs_imu_state0.cov = Cov.block(imu_id, imu_id, state->imu()->size(), state->imu()->size());
     std::cout << "cost of generating rs_imu: " << cost.toc() << "\n";
 //    for (auto data : prop_data) {
 //        std::cout << "prop_data am: " << data.am.transpose() << "\n";
@@ -91,6 +100,12 @@ void Propagator::propagate_and_clone(State* state, double timestamp, const RsPro
 
     // Loop through all IMU messages, and use them to move the state forward in time
     // This uses the zero'th order quat, and then constant acceleration discrete
+    std::cout << std::setprecision(16);
+    std::cout << "stamp(us): " << state->timestamp()*1e6 << "\nimu prop q: " << state->imu()->quat().transpose() << "\n";
+    std::cout << "imu prop p: " << state->imu()->pos().transpose() << "\n";
+    std::cout << "imu prop v: " << state->imu()->vel().transpose() << "\n";
+    std::cout << "imu prop ba: " << state->imu()->bias_a().transpose() << "\n";
+    std::cout << "imu prop bg: " << state->imu()->bias_g().transpose() << "\n";
     for(size_t i=0; i<prop_data.size()-1; i++) {
 
         // Get the next state Jacobian and noise Jacobian for this IMU reading
@@ -132,6 +147,27 @@ void Propagator::propagate_and_clone(State* state, double timestamp, const RsPro
 
     // Now perform stochastic cloning
     StateHelper::augment_clone(state, last_w);
+
+    // propogate rs_imus
+//    RsImuState rs_imu_state0;
+//    rs_imu_state0.timestamp = state->timestamp();
+//    rs_imu_state0.p = state->imu()->pos();
+//    rs_imu_state0.q = state->imu()->quat();
+//    rs_imu_state0.v = state->imu()->vel();
+//    rs_imu_state0.ba = state->imu()->bias_a();
+//    rs_imu_state0.bg = state->imu()->bias_g();
+//    rs_imu_state0.cov = Cov.block(imu_id, imu_id, state->imu()->size(), state->imu()->size());
+    std::vector<RsImuState> rs_imu_states;
+    propogate_rs_imus(rs_imu_state0, rs_imus, rs_imu_states);
+    for (int i = 0; i < rs_imu_states.size(); i++) {
+        const RsImuState& rs_imu_state = rs_imu_states[i];
+        std::cout << std::setprecision(16);
+        std::cout << i << " rs_imu_state stamp(us): " << rs_imu_state.timestamp*1e6 << "\nrs_imu prop q: " << rs_imu_state.q.transpose() << "\n";
+        std::cout << i << " rs_imu prop p: " << rs_imu_state.p.transpose() << "\n";
+        std::cout << i << " rs_imu prop v: " << rs_imu_state.v.transpose() << "\n";
+        std::cout << i << " rs_imu prop ba: " << rs_imu_state.ba.transpose() << "\n";
+        std::cout << i << " rs_imu prop bg: " << rs_imu_state.bg.transpose() << "\n";
+    }
 
 }
 
@@ -334,15 +370,15 @@ std::vector<Propagator::IMUDATA> Propagator::select_imu_readings(const std::vect
 
 }
 
-void Propagator::propogate_rs_imus(const RsImuState& state0, const std::vector<IMUDATA>& rs_imus, std::vector<RsImuState>& rs_imus_state) {
+void Propagator::propogate_rs_imus(const RsImuState& state0, const std::vector<IMUDATA>& rs_imus, std::vector<RsImuState>& rs_imu_states) {
     if (rs_imus.empty()) {
         std::cerr << "No rs_imus when propagating\n";
         return;
     }
-    rs_imus_state.resize(rs_imus.size());
-    rs_imus_state[0] = state0;
+    rs_imu_states.resize(rs_imus.size());
+    rs_imu_states[0] = state0;
     for (int i = 0; i < rs_imus.size() - 1; i++) {
-        const RsImuState& cur_state = rs_imus_state[0];
+        const RsImuState& cur_state = rs_imu_states[i];
         double dt = rs_imus[i+1].timestamp - rs_imus[i].timestamp;
         assert(dt >= 0);
         Eigen::Matrix<double, 3, 1> w_hat1 = rs_imus[i].wm - state0.bg;
@@ -364,9 +400,15 @@ void Propagator::propogate_rs_imus(const RsImuState& state0, const std::vector<I
             bigO = I_4x4 + 0.5*dt*Omega(w_hat);
         }
         RsImuState nxt_state;
+        nxt_state.timestamp = rs_imus[i+1].timestamp;
         nxt_state.q = quatnorm(bigO*cur_state.q);
-        nxt_state.v = cur_state.v + R_Gtoi.transpose()*a_hat*dt*dt - 0.5*_gravity*dt*dt;
-        rs_imus_state[i+1] = nxt_state;
+        nxt_state.v = cur_state.v + R_Gtoi.transpose()*a_hat*dt -_gravity*dt;
+        nxt_state.p = cur_state.p + cur_state.v*dt + 0.5*R_Gtoi.transpose()*a_hat*dt*dt - 0.5*_gravity*dt*dt;
+        // 后续看有没有必要得到rs_row对应的cov
+        nxt_state.ba = cur_state.ba;
+        nxt_state.bg = cur_state.bg;
+        nxt_state.cov = cur_state.cov;
+        rs_imu_states[i+1] = nxt_state;
     }
 }
 
@@ -479,6 +521,12 @@ void Propagator::predict_and_compute(State *state, const IMUDATA data_minus, con
     imu_x.block(7,0,3,1) = new_v;
     state->imu()->set_value(imu_x);
     state->imu()->set_fej(imu_x);
+    std::cout << std::setprecision(16);
+    std::cout << "stamp(us): " << data_plus.timestamp*1e6 << "\nimu prop q: " << new_q.transpose() << "\n";
+    std::cout << "imu prop p: " << new_p.transpose() << "\n";
+    std::cout << "imu prop v: " << new_v.transpose() << "\n";
+    std::cout << "imu prop ba: " << state->imu()->bias_a().transpose() << "\n";
+    std::cout << "imu prop bg: " << state->imu()->bias_g().transpose() << "\n";
 
 }
 
