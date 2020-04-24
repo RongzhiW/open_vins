@@ -25,7 +25,7 @@
 #include "state/StateHelper.h"
 #include "utils/quat_ops.h"
 #include <ros/ros.h>
-#include "core/rs_imp.h"
+#include "core/rs_info.h"
 
 using namespace ov_core;
 

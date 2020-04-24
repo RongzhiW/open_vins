@@ -1,41 +1,16 @@
 //
-// Created by dji on 20-4-23.
+// Created by dji on 20-4-24.
 //
 
 #ifndef PROJECT_RS_IMP_H
 #define PROJECT_RS_IMP_H
-#include <Eigen/Dense>
 
-struct RsPropOption {
-    int image_height;
-    double rs_tr_row;
-    double rs_td;
-};
-struct RsPreintegState {
-  public:
-    RsPreintegState() {
-        delta_p.setZero();
-        delta_v.setZero();
-        delta_q = Eigen::Matrix<double, 4, 1>{0,0,0,1};
-        ba.setZero();
-        bg.setZero();
-        cov.setIdentity();
-    }
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    double timestamp;
-    Eigen::Matrix<double, 3, 1> delta_p, delta_v;
-    Eigen::Matrix<double, 4, 1> delta_q;
-    Eigen::Matrix<double, 3, 1> ba, bg;
-    Eigen::MatrixXd cov;
-};
-struct RsImuState {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    double timestamp;
-    Eigen::Matrix<double, 3, 1> p, v;
-    Eigen::Matrix<double, 4, 1> q;
-    Eigen::Matrix<double, 3, 1> ba, bg;
-    Eigen::MatrixXd cov;
-};
+#include <feat/Feature.h>
+#include <feat/FeatureInitializer.h>
+#include "state/State.h"
+using namespace ov_msckf;
 
+// 计算rs上的每个feat的各个观测对应的camera pose
+void get_rs_feat_clonesCam(State* state, Feature* feat, std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>>& clones_cam);
 
 #endif //PROJECT_RS_IMP_H

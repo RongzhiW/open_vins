@@ -31,7 +31,7 @@
 #include "types/PoseJPL.h"
 #include "types/Landmark.h"
 #include "StateOptions.h"
-#include "core/rs_imp.h"
+#include "core/rs_info.h"
 
 using namespace ov_core;
 

@@ -184,6 +184,9 @@ bool FeatureInitializer::single_gaussnewton(Feature* feat, std::unordered_map<si
 
     // Cost at the last iteration
     double cost_old = compute_error(clonesCAM,feat,alpha,beta,rho);
+    std::cout << "feat id: " << feat->featid << " cost after triang :" << sqrt(cost_old)*740 << "\n";
+//    return true;
+
 
     // Get the position of the anchor pose
     Eigen::Matrix<double,3,3> &R_GtoA = clonesCAM.at(feat->anchor_cam_id).at(feat->anchor_clone_timestamp).Rot();

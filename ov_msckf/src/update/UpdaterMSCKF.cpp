@@ -19,7 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "UpdaterMSCKF.h"
-
+#include "core/rs_imp.h"
 
 
 using namespace ov_core;
@@ -96,8 +96,26 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
     auto it1 = feature_vec.begin();
     while(it1 != feature_vec.end()) {
 
+        std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>> rs_clones_cam;
+        get_rs_feat_clonesCam(state, *it1, rs_clones_cam);
+//        for (auto& clone_pair : rs_clones_cam) {
+//            for (auto& cam : clone_pair.second) {
+//                std::cout << std::setprecision(16);
+//                std::cout << "rs_clone_cam id: " << clone_pair.first << " stamp: " << cam.first*1e6 << "\n";
+//                std::cout << "rs p: " << cam.second.pos().transpose() << "\n";
+//                std::cout << "rs q: " << cam.second.Rot().eulerAngles(2,1,0).transpose() << "\n";
+//            }
+//        }
+//        for (auto& clone_pair : clones_cam) {
+//            for (auto& cam : clone_pair.second) {
+//                std::cout << std::setprecision(16);
+//                std::cout << "all_clone_cam id: " << clone_pair.first << " stamp: " << cam.first*1e6 << "\n";
+//                std::cout << "p: " << cam.second.pos().transpose() << "\n";
+//                std::cout << "q: " << cam.second.Rot().eulerAngles(2,1,0).transpose() << "\n";
+//            }
+//        }
         // Triangulate the feature and remove if it fails
-        bool success = initializer_feat->single_triangulation(*it1, clones_cam);
+        bool success = initializer_feat->single_triangulation(*it1, rs_clones_cam);
         if(!success) {
             std::cout << "fail in triangulation! id: " << (*it1)->featid << std::endl;
             (*it1)->to_delete = true;
@@ -107,7 +125,7 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
 
         // Gauss-newton refine the feature
 //        std::cout << "triangulate p_FinA: " << (*it1)->p_FinA.transpose() << std::endl;
-        success = initializer_feat->single_gaussnewton(*it1, clones_cam);
+        success = initializer_feat->single_gaussnewton(*it1, rs_clones_cam);
 //        std::cout << "gaussnewton: " << (*it1)->p_FinA.transpose() << std::endl;
 //        if(!success) {
 //            std::cout << "fail in gaussnewton ! id: " << (*it1)->featid << std::endl;

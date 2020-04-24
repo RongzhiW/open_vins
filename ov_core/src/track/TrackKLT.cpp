@@ -92,6 +92,8 @@ void TrackKLT::feed_monocular(double timestamp, cv::Mat &img, size_t cam_id) {
         // Ensure we do not have any bad KLT tracks (i.e., points are negative)
         if(pts_left_new[i].pt.x < 0 || pts_left_new[i].pt.y < 0)
             continue;
+        if (pts_left_new[i].pt.x >= img.cols || pts_left_new[i].pt.y >= img.rows)
+            continue;
         // If it is a good track, and also tracked from left to right
         if(mask_ll[i]) {
             good_left.push_back(pts_left_new[i]);
