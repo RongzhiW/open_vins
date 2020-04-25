@@ -4,6 +4,7 @@
 
 #include "rs_imp.h"
 #include "rs_info.h"
+#include "state/Propagator.h"
 
 void get_rs_feat_clonesCam(State* state, Feature* feat, std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>>& clones_cam) {
     for (auto const& pair : feat->timestamps) {
@@ -13,12 +14,22 @@ void get_rs_feat_clonesCam(State* state, Feature* feat, std::unordered_map<size_
             int u = int(feat->uvs.at(pair.first).at(m)(0));
             int v = int(feat->uvs.at(pair.first).at(m)(1));
 //            std::cout << "feat_id: " << feat->featid << " u/v: " << u << "/" << v << "\n";
+
+            RsImuState rs_state_v;
+            feat_clone_imu_at_v(state, timestamp, v, rs_state_v);
+
             std::vector<RsImuState>& rs_imu_states = state->get_clone_rs_imu_states().at(timestamp);
+
+            assert((rs_state_v.timestamp-rs_imu_states[v].timestamp)<1e-20);
+            assert((rs_state_v.p-rs_imu_states[v].p).norm()<1e-20);
+            assert((rs_state_v.q-rs_imu_states[v].q).norm()<1e-20);
+            assert((rs_state_v.v-rs_imu_states[v].v).norm()<1e-20);
 //            assert(rs_imu_states.size() == camera_wh.at(0).second);
-            assert(v < rs_imu_states.size());
-            Eigen::Matrix<double, 4, 1> q_IG = rs_imu_states[v].q;
+//            assert(v < rs_imu_states.size());
+
+            Eigen::Matrix<double, 4, 1> q_IG = rs_state_v.q;
             Eigen::Matrix<double, 3, 3> R_IG = quat_2_Rot(q_IG);
-            Eigen::Matrix<double, 3, 1> p_GI = rs_imu_states[v].p;
+            Eigen::Matrix<double, 3, 1> p_GI = rs_state_v.p;
             Eigen::Matrix<double, 3, 3> R_CI = state->get_calib_IMUtoCAM(pair.first)->Rot();
             Eigen::Matrix<double, 3, 1> t_CI = state->get_calib_IMUtoCAM(pair.first)->pos();
             Eigen::Matrix<double, 3, 3> R_CG = R_CI * R_IG;
@@ -27,6 +38,20 @@ void get_rs_feat_clonesCam(State* state, Feature* feat, std::unordered_map<size_
         }
         clones_cam.insert({pair.first, clones_cami});
     }
+}
+
+void feat_clone_imu_at_v(State* state, double timestamp, int v, RsImuState& rs_state_v) {
+    assert(state != nullptr);
+    RsImuState rs_state_0;
+    rs_state_0.timestamp = timestamp;
+    rs_state_0.p = state->get_clone(timestamp)->pos();
+    rs_state_0.q = state->get_clone(timestamp)->quat();
+    rs_state_0.v = state->get_clones_vel()[timestamp]->value();
+    rs_state_0.ba = state->imu()->bias_a();
+    rs_state_0.bg = state->imu()->bias_g();
+    assert(v < state->get_clones_rs_imu_preintegs()[timestamp].size());
+    RsPreintegState& rs_preinteg = state->get_clones_rs_imu_preintegs()[timestamp].at(v);
+    Propagator::rs_pose_each_v(rs_state_0, rs_preinteg, state->options().gravity, rs_state_v);
 }
 
 void correct_pFinA(FeatureInitializer::ClonePose& rs_anchor_pose, FeatureInitializer::ClonePose& anchor_pose, Feature* feat) {

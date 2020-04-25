@@ -181,6 +181,7 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
         feat.uvs_norm = (*it2)->uvs_norm;
         feat.timestamps = (*it2)->timestamps;
         feat.feat_representation = state->options().feat_representation;
+        feat.rs_enabled = _options.rs_enabled;
 
         // Save the position and its fej value
         if(FeatureRepresentation::is_relative_representation(feat.feat_representation)) {

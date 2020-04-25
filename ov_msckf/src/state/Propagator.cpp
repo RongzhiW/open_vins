@@ -383,6 +383,19 @@ std::vector<Propagator::IMUDATA> Propagator::select_imu_readings(const std::vect
 
 }
 
+void Propagator::rs_pose_each_v(const RsImuState& rs_state_0, const RsPreintegState& rs_preinteg_v, const Eigen::Vector3d _gravity, RsImuState& rs_state_v) {
+    rs_state_v.timestamp =  rs_preinteg_v.timestamp;
+    double dt = rs_state_v.timestamp - rs_state_0.timestamp;
+    Eigen::Matrix3d R_Gtoi0 = quat_2_Rot(rs_state_0.q);
+    rs_state_v.p = rs_state_0.p + R_Gtoi0.transpose()*rs_preinteg_v.delta_p + rs_state_0.v*dt - 0.5*_gravity*dt*dt;
+    rs_state_v.q = quat_multiply(rs_preinteg_v.delta_q, rs_state_0.q);
+    rs_state_v.v = rs_state_0.v + R_Gtoi0.transpose()*rs_preinteg_v.delta_v - _gravity*dt;
+    rs_state_v.ba = rs_state_0.ba;
+    rs_state_v.bg = rs_state_0.bg;
+    // 暂时不进行cov的更新
+    rs_state_v.cov = rs_state_0.cov;
+}
+
 void Propagator::update_rs_imu_propogation(const RsImuState& state0, const std::vector<RsPreintegState>& rs_preinteg_states, std::vector<RsImuState>& rs_imu_states) {
     if (rs_preinteg_states.empty()) {
         std::cerr << "No rs_preinteg_states when updating rs_imu_propagating\n";
@@ -402,6 +415,12 @@ void Propagator::update_rs_imu_propogation(const RsImuState& state0, const std::
         rs_imu_states[i].bg = state0.bg;
         // 暂时不进行cov的更新
         rs_imu_states[i].cov = state0.cov;
+        RsImuState state_tmp;
+        rs_pose_each_v(state0, rs_preinteg_states[i], _gravity, state_tmp);
+        assert((rs_imu_states[i].timestamp - state_tmp.timestamp) < 1e-20);
+        assert((rs_imu_states[i].q - state_tmp.q).norm() < 1e-20);
+        assert((rs_imu_states[i].p - state_tmp.p).norm() < 1e-20);
+        assert((rs_imu_states[i].v - state_tmp.v).norm() < 1e-20);
     }
 }
 

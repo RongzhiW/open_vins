@@ -15,4 +15,6 @@ void get_rs_feat_clonesCam(State* state, Feature* feat, std::unordered_map<size_
 
 void correct_pFinA(FeatureInitializer::ClonePose& rs_anchor_pose, FeatureInitializer::ClonePose& anchor_pose, Feature* feat);
 
+void feat_clone_imu_at_v(State* state, double timestamp, int v, RsImuState& rs_state_v);
+
 #endif //PROJECT_RS_IMP_H

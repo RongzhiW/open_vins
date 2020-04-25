@@ -66,6 +66,12 @@ namespace ov_msckf {
         /// What representation our features are in
         FeatureRepresentation::Representation feat_representation = FeatureRepresentation::Representation::GLOBAL_3D;
 
+        /// _gravity
+        Eigen::Vector3d gravity{0,0,9.8};
+
+        /// rs related
+        bool rs_enabled = false;
+
     };
 
 

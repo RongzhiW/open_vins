@@ -149,6 +149,9 @@ namespace ov_msckf {
         std::map<double, std::vector<RsImuState>>& get_clone_rs_imu_states() {
             return _clones_rs_imu_states;
         };
+        std::map<double, std::vector<RsPreintegState>>& get_clones_rs_imu_preintegs() {
+            return _clones_rs_imu_preintegs;
+        };
 
         /// Get current number of clones
         size_t n_clones() {
@@ -204,6 +207,7 @@ namespace ov_msckf {
         std::map<double, PoseJPL*> _clones_IMU;
         std::map<double, Vec*> _clones_vel;
         std::map<double, std::vector<RsImuState>> _clones_rs_imu_states;
+        std::map<double, std::vector<RsPreintegState>> _clones_rs_imu_preintegs;
 
         /// Our current set of SLAM features (3d positions)
         std::unordered_map<size_t, Landmark*> _features_SLAM;

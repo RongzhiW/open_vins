@@ -52,7 +52,7 @@
         <rosparam param="cam1_d">[0.023584346301328347, -0.006764098468377487, 0.010259071387776937, -0.0037561745737771414]</rosparam>
         <rosparam param="cam0_k">[739.1654756101043, 739.1438452683457, 625.826167006398, 517.3370973594253]</rosparam>
         <rosparam param="cam0_d">[0.019327620961435945, 0.006784242994724914, -0.008658628531456217, 0.0051893686731546585]</rosparam>
-        <param name="rs_enabled" type="bool" value="false" />
+        <param name="rs_enabled" type="bool" value="true" />
         <param name="rs_row_tr_us" type="double" value="29.4737" />
 
         <!-- camera extrinsics -->

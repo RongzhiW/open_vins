@@ -166,7 +166,10 @@ namespace ov_msckf {
         static void select_imu_readings(const std::vector<IMUDATA>& imu_data, const double time0, const double time1, std::vector<IMUDATA> &prop_data);
         static void generate_rs_imus(const std::vector<IMUDATA>& imu_data, const double t0, const double tr_row,
                                      const int img_height, std::vector<IMUDATA>& rs_imus);
+        // 根据imu预积分更新rs每一行对应的位姿
         void update_rs_imu_propogation(const RsImuState& state0, const std::vector<RsPreintegState>& rs_preinteg_states, std::vector<RsImuState>& rs_imu_states);
+        // 根据imu预积分计算rs第v行对应的位姿
+        static void rs_pose_each_v(const RsImuState& rs_state_0, const RsPreintegState& rs_preinteg_v, const Eigen::Vector3d _gravity, RsImuState& rs_state_v);
 
         /**
          * @brief Nice helper function that will linearly interpolate between two imu messages.

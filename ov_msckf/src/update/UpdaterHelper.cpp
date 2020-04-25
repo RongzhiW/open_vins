@@ -19,6 +19,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 #include "UpdaterHelper.h"
+#include "core/rs_imp.h"
 
 
 using namespace ov_core;
@@ -426,6 +427,15 @@ void UpdaterHelper::get_feature_jacobian_full(State* state, UpdaterHelperFeature
             PoseJPL* clone_Ii = state->get_clone(feature.timestamps[pair.first].at(m));
             Eigen::Matrix<double,3,3> R_GtoIi = clone_Ii->Rot();
             Eigen::Matrix<double,3,1> p_IiinG = clone_Ii->pos();
+            if (state->options().rs_enabled) {
+                double timestamp = feature.timestamps[pair.first].at(m);
+                int v = int(feature.uvs.at(pair.first).at(m)(1));
+                RsImuState rs_state_v;
+                feat_clone_imu_at_v(state, timestamp, v, rs_state_v);
+                R_GtoIi = quat_2_Rot(rs_state_v.q);
+                p_IiinG = rs_state_v.p;
+
+            }
 
             // Get current feature in the IMU
             Eigen::Matrix<double,3,1> p_FinIi = R_GtoIi*(p_FinG-p_IiinG);

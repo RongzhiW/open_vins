@@ -52,6 +52,8 @@ VioManager::VioManager(ros::NodeHandle &nh) {
     nh.param<int>("max_aruco", state_options.max_aruco_features, 0);
     nh.param<int>("max_cameras", state_options.num_cameras, 1);
     nh.param<double>("dt_slam_delay", dt_statupdelay, 3);
+    // rs related
+    nh.param<bool>("rs_enabled", state_options.rs_enabled, false);
 
     // Enforce that if we are doing stereo tracking, we have two cameras
     if(state_options.num_cameras < 1) {
@@ -82,6 +84,14 @@ VioManager::VioManager(ros::NodeHandle &nh) {
         std::exit(EXIT_FAILURE);
     }
 
+    // Global gravity
+    Eigen::Matrix<double,3,1> gravity;
+    std::vector<double> vec_gravity;
+    std::vector<double> vec_gravity_default = {0.0,0.0,9.81};
+    nh.param<std::vector<double>>("gravity", vec_gravity, vec_gravity_default);
+    gravity << vec_gravity.at(0),vec_gravity.at(1),vec_gravity.at(2);
+    state_options.gravity = gravity;
+
     // Create the state!!
     state = new State(state_options);
 
@@ -94,12 +104,6 @@ VioManager::VioManager(ros::NodeHandle &nh) {
     state->calib_dt_CAMtoIMU()->set_value(temp_camimu_dt);
     state->calib_dt_CAMtoIMU()->set_fej(temp_camimu_dt);
 
-    // Global gravity
-    Eigen::Matrix<double,3,1> gravity;
-    std::vector<double> vec_gravity;
-    std::vector<double> vec_gravity_default = {0.0,0.0,9.81};
-    nh.param<std::vector<double>>("gravity", vec_gravity, vec_gravity_default);
-    gravity << vec_gravity.at(0),vec_gravity.at(1),vec_gravity.at(2);
 
     // Debug, print to the console!
     ROS_INFO("FILTER PARAMETERS:");
@@ -687,6 +691,7 @@ void VioManager::do_feature_propagate_update(double timestamp) {
     // Also augment it with a new clone!
     propagator->propagate_and_clone(state, timestamp, {camera_wh[0].second, rs_row_tr, 0.0});
     clone_rs_preintegs[timestamp] = propagator->get_rs_preinteg_states();
+    state->get_clones_rs_imu_preintegs()[timestamp] = propagator->get_rs_preinteg_states();
     rT3 =  boost::posix_time::microsec_clock::local_time();
 
     // If we have not reached max clones, we should just return...
