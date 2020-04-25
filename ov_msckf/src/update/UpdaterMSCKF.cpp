@@ -92,12 +92,16 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
 
     }
 
+    std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>>* clones_cam_ptr = &clones_cam;
     // 3. Try to triangulate all MSCKF or new SLAM features that have measurements
     auto it1 = feature_vec.begin();
     while(it1 != feature_vec.end()) {
 
         std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>> rs_clones_cam;
         get_rs_feat_clonesCam(state, *it1, rs_clones_cam);
+        if (_options.rs_enabled) {
+            clones_cam_ptr = &rs_clones_cam;
+        }
 //        for (auto& clone_pair : rs_clones_cam) {
 //            for (auto& cam : clone_pair.second) {
 //                std::cout << std::setprecision(16);
@@ -115,7 +119,7 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
 //            }
 //        }
         // Triangulate the feature and remove if it fails
-        bool success = initializer_feat->single_triangulation(*it1, rs_clones_cam);
+        bool success = initializer_feat->single_triangulation(*it1, *clones_cam_ptr);
         if(!success) {
             std::cout << "fail in triangulation! id: " << (*it1)->featid << std::endl;
             (*it1)->to_delete = true;
@@ -125,7 +129,7 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
 
         // Gauss-newton refine the feature
 //        std::cout << "triangulate p_FinA: " << (*it1)->p_FinA.transpose() << std::endl;
-        success = initializer_feat->single_gaussnewton(*it1, rs_clones_cam);
+        success = initializer_feat->single_gaussnewton(*it1, *clones_cam_ptr);
 //        std::cout << "gaussnewton: " << (*it1)->p_FinA.transpose() << std::endl;
 //        if(!success) {
 //            std::cout << "fail in gaussnewton ! id: " << (*it1)->featid << std::endl;
@@ -133,6 +137,11 @@ void UpdaterMSCKF::update(State *state, std::vector<Feature*>& feature_vec) {
 //            it1 = feature_vec.erase(it1);
 //            continue;
 //        }
+        if (_options.rs_enabled) {
+            FeatureInitializer::ClonePose& rs_anchor_pose = rs_clones_cam.at((*it1)->anchor_cam_id).at((*it1)->anchor_clone_timestamp);
+            FeatureInitializer::ClonePose& anchor_pose = clones_cam.at((*it1)->anchor_cam_id).at((*it1)->anchor_clone_timestamp);
+            correct_pFinA(rs_anchor_pose, anchor_pose, *it1);
+        }
         it1++;
 
     }

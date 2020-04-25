@@ -9,14 +9,14 @@
 
         <!-- bag parameters -->
         <!-- <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/Tum/dataset-room1_512_16.bag" />-->
-        <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq2.bag" />
+        <param name="path_bag"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/calibrated/dataset-seq2.bag" />
         <!-- <param name="path_bag"    type="string" value="/home/dji/Documents/datasets/rolling_shutter/Tum/dataset-seq1.bag" />-->
         <param name="bag_start"   type="int"    value="0" />
         <param name="bag_durr"    type="int"    value="-1" />
 
         <!-- ground truth -->
 <!--        <param name="path_gthaha"    type="string" value="/home/dji/Documents/datasets/EucRoc/V2_01_easy/mav0/state_groundtruth_estimate0/data.csv" />-->
-        <param name="path_gt"    type="string" value="/home/dji/Documents/datasets/rolling_shutter/Tum/exported/dataset-seq2/mav0/mocap0/data.csv" />
+        <param name="path_gt"    type="string" value="/home/tianu/Documents/datasets/rolling_shutter/Tum/exported/dataset-seq2/mav0/mocap0/data.csv" />
 
         <!-- world/filter parameters -->
         <param name="max_clones"             type="int"    value="11" />
@@ -52,7 +52,7 @@
         <rosparam param="cam1_d">[0.023584346301328347, -0.006764098468377487, 0.010259071387776937, -0.0037561745737771414]</rosparam>
         <rosparam param="cam0_k">[739.1654756101043, 739.1438452683457, 625.826167006398, 517.3370973594253]</rosparam>
         <rosparam param="cam0_d">[0.019327620961435945, 0.006784242994724914, -0.008658628531456217, 0.0051893686731546585]</rosparam>
-        <param name="rs_enabled" type="bool" value="true" />
+        <param name="rs_enabled" type="bool" value="false" />
         <param name="rs_row_tr_us" type="double" value="29.4737" />
 
         <!-- camera extrinsics -->

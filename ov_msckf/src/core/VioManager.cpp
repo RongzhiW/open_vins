@@ -256,6 +256,7 @@ VioManager::VioManager(ros::NodeHandle &nh) {
     nh.param<double>("fi_max_dist", featinit_options.max_dist, 40);
     nh.param<double>("fi_max_baseline", featinit_options.max_baseline, 40);
     nh.param<double>("fi_max_cond_number", featinit_options.max_cond_number, 1000);
+    featinit_options.rs_enabled = rs_enabled;
 
     // Debug, print to the console!
     ROS_INFO("FEATURE INITIALIZER PARAMETERS:");
@@ -332,8 +333,10 @@ VioManager::VioManager(ros::NodeHandle &nh) {
     UpdaterOptions aruco_options;
     nh.param<double>("up_msckf_sigma_px", msckf_options.sigma_pix, 1);
     nh.param<int>("up_msckf_chi2_multipler", msckf_options.chi2_multipler, 5);
+    msckf_options.rs_enabled = rs_enabled;
     nh.param<double>("up_slam_sigma_px", slam_options.sigma_pix, 1);
     nh.param<int>("up_slam_chi2_multipler", slam_options.chi2_multipler, 5);
+    slam_options.rs_enabled = rs_enabled;
     nh.param<double>("up_aruco_sigma_px", aruco_options.sigma_pix, 1);
     nh.param<int>("up_aruco_chi2_multipler", aruco_options.chi2_multipler, 5);
 

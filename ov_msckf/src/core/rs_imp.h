@@ -13,4 +13,6 @@ using namespace ov_msckf;
 // 计算rs上的每个feat的各个观测对应的camera pose
 void get_rs_feat_clonesCam(State* state, Feature* feat, std::unordered_map<size_t, std::unordered_map<double, FeatureInitializer::ClonePose>>& clones_cam);
 
+void correct_pFinA(FeatureInitializer::ClonePose& rs_anchor_pose, FeatureInitializer::ClonePose& anchor_pose, Feature* feat);
+
 #endif //PROJECT_RS_IMP_H

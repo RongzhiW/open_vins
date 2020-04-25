@@ -60,6 +60,9 @@ namespace ov_core {
         /// Max condition number of linear triangulation matrix accept triangulated features
         double max_cond_number = 1000;
 
+        /// rs related
+        bool rs_enabled = false;
+
 
     };
 

@@ -39,6 +39,9 @@ namespace ov_msckf {
         /// Covariance for our raw pixel measurements
         double sigma_pix_sq = 1;
 
+        /// rs related
+        bool rs_enabled = false;
+
     };
 
 

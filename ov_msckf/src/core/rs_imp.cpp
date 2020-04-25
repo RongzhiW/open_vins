@@ -28,3 +28,17 @@ void get_rs_feat_clonesCam(State* state, Feature* feat, std::unordered_map<size_
         clones_cam.insert({pair.first, clones_cami});
     }
 }
+
+void correct_pFinA(FeatureInitializer::ClonePose& rs_anchor_pose, FeatureInitializer::ClonePose& anchor_pose, Feature* feat) {
+    Eigen::Matrix<double,3,3> &R_GtoRsA = rs_anchor_pose.Rot();
+    Eigen::Matrix<double,3,1> &p_RsAinG = rs_anchor_pose.pos();
+    Eigen::Matrix<double,3,3> &R_GtoA = anchor_pose.Rot();
+    Eigen::Matrix<double,3,1> &p_AinG = anchor_pose.pos();
+    Eigen::Matrix<double,3,3> R_RsAtoA = R_GtoA * R_GtoRsA.transpose();
+    Eigen::Matrix<double,3,1> p_RsAtoA = R_GtoA * (p_RsAinG - p_AinG);
+    feat->p_FinA = R_RsAtoA * feat->p_FinA + p_RsAtoA;
+    Eigen::Matrix<double,3,1> p_FinG = R_GtoA.transpose() * feat->p_FinA + p_AinG;
+//    std::cout << "p_RsAinG: " << p_RsAinG.transpose() << " p_AinG: " << p_AinG.transpose() << "\n";
+//    std::cout << "p_FinG: " << p_FinG.transpose() << " feat->p_FinG: " << feat->p_FinG.transpose() << "\n";
+    assert(fabs((p_FinG - feat->p_FinG).norm()) < 1e-10);
+}
